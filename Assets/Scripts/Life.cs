@@ -11,70 +11,74 @@ using UnityEngine;
 public class Life : MonoBehaviour
 {
     [SerializeField] GameObject refSquare;
-    [SerializeField] float scaler = 1;
+    //[SerializeField] float scaler = 1;
     [SerializeField][Range(0.01f,1.0f)] float refreshRate = 1;
     float refreshTimer = 0;
 
     //float height;
     //float width;
     Texture2D refTexture;
-    Vector3 startPos;
-    // [SerializeField] bool[][] xy2 =
-    // {
-    //     new bool[50], new bool [50]
-    // };
+    //Vector3 startPos;
+    [SerializeField] Cell[][] xy2 =
+    {
+        new Cell[50], new Cell [50]
+    };
     [SerializeField] Cell[,] xy;
     [SerializeField] int xArraySize = 1;
     [SerializeField] int yArraySize = 1;
     [SerializeField] int lifeChance = 1;
     bool hasChecked = false;
     [SerializeField] int stableCells = 0;
+    [SerializeField] int unstableGenerations;
+    [SerializeField] bool stable;
     [SerializeField] float gridGap = 0.1f;
     Vector2 clickPos;
     bool playing = false;
+    Camera cam;
   
     void Start()
     {
+        cam = Camera.main;
         Application.targetFrameRate = 60;
-        //Camera cam = Camera.main;
-        //height = cam.orthographicSize;
-        //width = height * cam.aspect;
-        //startPos = new Vector3(-width*2 + width, -height*2 + height,0);
+        unstableGenerations = 0;
         refTexture = refSquare.GetComponent<SpriteRenderer>().sprite.texture;
         refSquare.SetActive(false);
-        startPos = new Vector3();
+        //startPos = new Vector3();
         xy = new Cell[xArraySize,yArraySize];
         
-   
+        //int test = xy.GetLength(1);
         bool toLive = false;
         for (int x = 0; x < xArraySize; x++)
         {
             for (int y = 0; y < yArraySize; y++)
             {
                 var newO = new GameObject("Cell :" + x + ", " + y);
-                newO.transform.position = startPos;
+                //newO.transform.position = startPos;
                 SpriteRenderer newOSprite = newO.AddComponent<SpriteRenderer>();
-                newOSprite.sprite = Sprite.Create(refTexture, new Rect(0,0,scaler*100,scaler*100),new Vector3(0.5f,0.5f,0.5f));
-                newOSprite.color = Color.white;
+                newOSprite.sprite = Sprite.Create(refTexture, new Rect(0,0,100-gridGap,100-gridGap),new Vector3(0.5f,0.5f,0.5f));
+                //newOSprite.color = Color.white;
                 newOSprite.sortingOrder = - 1;
                 if (Random.Range(0,100) < lifeChance) toLive = true;
                     else toLive = false;
 
-                xy[x,y] = new Cell(newO.transform, ((-xArraySize*0.5f) + x+(gridGap*x))*scaler,((-yArraySize*0.5f) + y+(gridGap*y))*scaler,toLive, newOSprite);
+                xy[x,y] = new Cell(newO.transform, -xArraySize*0.5f + x,-yArraySize*0.5f + y,toLive, newOSprite);
+
             }
         }
     }
 
     void Update()
     {
+
+
+        cam.orthographicSize -= Input.GetAxisRaw("Mouse ScrollWheel")*5f;
+
         if (Input.GetButtonDown("Jump"))
         {
             playing = !playing;
         }
 
         if (playing) refreshTimer -= Time.deltaTime;
-
-
 
         if (!hasChecked && refreshTimer < 0)
         {
@@ -84,34 +88,56 @@ public class Life : MonoBehaviour
         if (hasChecked)
         {
             UpdateCells();
-            refreshTimer = refreshRate;
-        }
-
-        if (Input.GetButtonDown("Fire1"))
-        {
-            clickPos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         }
 
         if (Input.GetButton("Fire1"))
         {
-            Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            Debug.DrawLine(clickPos,mousePos,Color.red);
-            Debug.Log(mousePos.x);
-            // int mouseIntX;
-            // int mouse
-            // mousePos.x -= Mathf.RoundToInt(gridGap*mousePos.x);
-            // mousePos.y -= Mathf.RoundToInt(gridGap*mousePos.y);
-            Debug.Log(mousePos.x);
-            int xClick = Mathf.Clamp(Mathf.RoundToInt(mousePos.x + (xArraySize*.5f)), 0, xArraySize-1);
-            int yClick = Mathf.Clamp(Mathf.RoundToInt(mousePos.y + (yArraySize*.5f)), 0, yArraySize-1);
+            int xPos, yPos;
+            GetClickPosToGrid(out xPos, out yPos);
+            xy[xPos, yPos].SetLife(true);
+        }
 
-            //Debug.Log(xClick);
+        if (Input.GetButtonDown("Fire2"))
+        {
+            int xPos, yPos;
+            GetClickPosToGrid(out xPos, out yPos);
+            xy[xPos, yPos].SetLife(true);
 
-            xy[xClick,yClick].SetLife(true);
-
+            int tempX = xPos;
+            int tempY = yPos;
+            //Spawn acorn
+            CheckAndSetLife(xPos-2,yPos+1);
+            CheckAndSetLife(xPos-2,yPos-1);
+            CheckAndSetLife(xPos-3,yPos-1);
+            CheckAndSetLife(xPos+1,yPos-1);
+            CheckAndSetLife(xPos+2,yPos-1);
+            CheckAndSetLife(xPos+3,yPos-1);
         }
 
     }
+
+    void CheckAndSetLife(int xIn, int yIn)
+    {
+        if (xIn >= 0 && xIn < xArraySize)
+        {
+            if (yIn >= 0 && yIn < yArraySize)
+            {
+                xy[xIn,yIn].SetLife(true);
+            }
+        }
+    }
+
+    private void GetClickPosToGrid(out int xPos, out int yPos)
+    {
+        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        //Debug.DrawLine(clickPos, mousePos, Color.red);
+
+        float xClick = Mathf.Clamp(mousePos.x + (xArraySize * .5f), 0, xArraySize - 1);
+        float yClick = Mathf.Clamp(mousePos.y + (yArraySize * .5f), 0, yArraySize - 1);
+        xPos = Mathf.RoundToInt(xClick);
+        yPos = Mathf.RoundToInt(yClick);
+    }
+
 
     private void CheckCells()
     {
@@ -153,8 +179,8 @@ public class Life : MonoBehaviour
 
     private void UpdateCells()
     {
+
         stableCells = 0;
-        hasChecked = false;
         //Debug.Log("//Apply changes");
         for (int x = 0; x < xy.GetLength(0); x++)
         {
@@ -168,7 +194,6 @@ public class Life : MonoBehaviour
                 if (alive && neighbours < 2)
                 {
                     //Debug.Log("Die due to loneliness");
-                    //thisCell.Die();
                     setAlive = false;
                 }
                 if (alive && neighbours >= 2)
@@ -178,13 +203,11 @@ public class Life : MonoBehaviour
                 if (!alive && neighbours == 3)
                 {
                     //Debug.Log("Come to life");
-                    //thisCell.Live();
                     setAlive = true;
                 }
                 if (alive && neighbours > 3)
                 {
                     //Debug.Log("Die due to overpopulation on");
-                    //thisCell.Die();
                     setAlive = false;
                 }
 
@@ -196,6 +219,20 @@ public class Life : MonoBehaviour
                 thisCell.aliveNeighbours = 0;
             }
         }
+        
+        if (stableCells == xArraySize*yArraySize)
+        {
+            stable = true;
+        }
+        else
+        {
+            stable = false;
+            unstableGenerations ++;
+        }
+        
+        refreshTimer = refreshRate;
+        hasChecked = false;
+    
     }
 }
 
