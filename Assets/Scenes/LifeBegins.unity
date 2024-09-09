@@ -183,7 +183,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 105
+  orthographic size: 10
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -329,10 +329,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   refSquare: {fileID: 1799692141}
   refreshRate: 0.1
+  aliveColor: {r: 1, g: 0, b: 0, a: 1}
+  dyingColor: {r: 0.9964403, g: 1, b: 0, a: 1}
+  stableColor: {r: 0, g: 0.10273242, b: 1, a: 1}
   xArraySize: 200
-  yArraySize: 200
-  lifeChance: 20
+  yArraySize: 150
+  lifeChance: 0
   stableCells: 0
+  unstableGenerations: 0
+  stable: 0
   gridGap: 5
 --- !u!4 &2118637557
 Transform:

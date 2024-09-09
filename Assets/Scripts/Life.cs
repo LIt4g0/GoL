@@ -3,26 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 //using Unity.Mathematics;
-
-
 //using System.Numerics;
 using UnityEngine;
 
 public class Life : MonoBehaviour
 {
     [SerializeField] GameObject refSquare;
-    //[SerializeField] float scaler = 1;
     [SerializeField][Range(0.01f,1.0f)] float refreshRate = 1;
     float refreshTimer = 0;
-
-    //float height;
-    //float width;
+    public Color aliveColor;
+    public Color dyingColor;
+    public Color stableColor;
     Texture2D refTexture;
-    //Vector3 startPos;
-    [SerializeField] Cell[][] xy2 =
-    {
-        new Cell[50], new Cell [50]
-    };
     [SerializeField] Cell[,] xy;
     [SerializeField] int xArraySize = 1;
     [SerializeField] int yArraySize = 1;
@@ -43,33 +35,27 @@ public class Life : MonoBehaviour
         unstableGenerations = 0;
         refTexture = refSquare.GetComponent<SpriteRenderer>().sprite.texture;
         refSquare.SetActive(false);
-        //startPos = new Vector3();
         xy = new Cell[xArraySize,yArraySize];
         
-        //int test = xy.GetLength(1);
         bool toLive = false;
         for (int x = 0; x < xArraySize; x++)
         {
             for (int y = 0; y < yArraySize; y++)
             {
                 var newO = new GameObject("Cell :" + x + ", " + y);
-                //newO.transform.position = startPos;
                 SpriteRenderer newOSprite = newO.AddComponent<SpriteRenderer>();
                 newOSprite.sprite = Sprite.Create(refTexture, new Rect(0,0,100-gridGap,100-gridGap),new Vector3(0.5f,0.5f,0.5f));
-                //newOSprite.color = Color.white;
                 newOSprite.sortingOrder = - 1;
                 if (Random.Range(0,100) < lifeChance) toLive = true;
                     else toLive = false;
 
-                xy[x,y] = new Cell(newO.transform, -xArraySize*0.5f + x,-yArraySize*0.5f + y,toLive, newOSprite);
-
+                xy[x,y] = new Cell(newO.transform, -xArraySize*0.5f + x,-yArraySize*0.5f + y,toLive, newOSprite, this);
             }
         }
     }
 
     void Update()
     {
-
 
         cam.orthographicSize -= Input.GetAxisRaw("Mouse ScrollWheel")*5f;
 
@@ -92,29 +78,17 @@ public class Life : MonoBehaviour
 
         if (Input.GetButton("Fire1"))
         {
-            int xPos, yPos;
-            GetClickPosToGrid(out xPos, out yPos);
-            xy[xPos, yPos].SetLife(true);
+            FireCell();
         }
 
         if (Input.GetButtonDown("Fire2"))
         {
-            int xPos, yPos;
-            GetClickPosToGrid(out xPos, out yPos);
-            xy[xPos, yPos].SetLife(true);
-
-            int tempX = xPos;
-            int tempY = yPos;
-            //Spawn acorn
-            CheckAndSetLife(xPos-2,yPos+1);
-            CheckAndSetLife(xPos-2,yPos-1);
-            CheckAndSetLife(xPos-3,yPos-1);
-            CheckAndSetLife(xPos+1,yPos-1);
-            CheckAndSetLife(xPos+2,yPos-1);
-            CheckAndSetLife(xPos+3,yPos-1);
+            FireAcorn();
         }
 
     }
+
+
 
     void CheckAndSetLife(int xIn, int yIn)
     {
@@ -129,7 +103,7 @@ public class Life : MonoBehaviour
 
     private void GetClickPosToGrid(out int xPos, out int yPos)
     {
-        Vector3 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
         //Debug.DrawLine(clickPos, mousePos, Color.red);
 
         float xClick = Mathf.Clamp(mousePos.x + (xArraySize * .5f), 0, xArraySize - 1);
@@ -148,7 +122,6 @@ public class Life : MonoBehaviour
             for (int y = 0; y < xy.GetLength(1); y++)
             {
                 Cell thisCell = xy[x, y];
-                //bool amIAlive = thisCell.alive;
                 int xPos = x;
                 int yPos = y;
                 int aliveNeighbours = 0;
@@ -172,7 +145,6 @@ public class Life : MonoBehaviour
                 if (!right && xy[x + 1, y].alive) aliveNeighbours++;//Debug.Log("Has alive neighbour to the right");
 
                 thisCell.aliveNeighbours = aliveNeighbours;
-                //Debug.Log("Alive neighbours: " + aliveNeighbours);
             }
         }
     }
@@ -181,7 +153,6 @@ public class Life : MonoBehaviour
     {
 
         stableCells = 0;
-        //Debug.Log("//Apply changes");
         for (int x = 0; x < xy.GetLength(0); x++)
         {
             for (int y = 0; y < xy.GetLength(1); y++)
@@ -212,11 +183,11 @@ public class Life : MonoBehaviour
                 }
 
                 thisCell.SetLife(setAlive);
+                thisCell.aliveNeighbours = 0;
                 if (thisCell.stableGenerations > 1)
                 {
                     stableCells ++;
                 }
-                thisCell.aliveNeighbours = 0;
             }
         }
         
@@ -234,11 +205,32 @@ public class Life : MonoBehaviour
         hasChecked = false;
     
     }
+    private void FireCell()
+    {
+        int xPos, yPos;
+        GetClickPosToGrid(out xPos, out yPos);
+        xy[xPos, yPos].SetLife(true);
+    }
+
+    private void FireAcorn()
+    {
+        int xPos, yPos;
+        GetClickPosToGrid(out xPos, out yPos);
+        xy[xPos, yPos].SetLife(true);
+        //Spawn acorn
+        CheckAndSetLife(xPos - 2, yPos + 1);
+        CheckAndSetLife(xPos - 2, yPos - 1);
+        CheckAndSetLife(xPos - 3, yPos - 1);
+        CheckAndSetLife(xPos + 1, yPos - 1);
+        CheckAndSetLife(xPos + 2, yPos - 1);
+        CheckAndSetLife(xPos + 3, yPos - 1);
+    }
 }
 
 public class Cell
 {
     public Vector2 position;
+    Life life;
     Transform transform;
     public bool alive;
     bool prevState;
@@ -246,26 +238,15 @@ public class Cell
     public int aliveNeighbours;
     public int stableGenerations = 0;
 
-    public Cell(Transform artHolderGameObject, float x, float y, bool live, SpriteRenderer spriteRendererIn)
+    public Cell(Transform artHolderGameObject, float x, float y, bool live, SpriteRenderer spriteRendererIn, Life lifeClass)
     {
-        //Set our position when we create the code.
         position = new Vector2(x, y);
         transform = artHolderGameObject;
         transform.position += (Vector3)position;
         spriteRenderer = spriteRendererIn;
-
+        life = lifeClass;
         SetLife(live);
-        //stableGenerations -= 1;
 
-    }
-
-    public void UpdatePos(Vector3 posIn)
-    {
-        //Update position
-        position = posIn;
-
-        //Send new position to the art game object.
-        transform.position = position;
     }
 
     public void SetLife(bool lifeIn)
@@ -274,7 +255,6 @@ public class Cell
         {
             stableGenerations ++;
             prevState = alive;
-
         }
         else
         {
@@ -282,13 +262,40 @@ public class Cell
             stableGenerations = 0;
         }
 
-        alive = lifeIn;
 
-        // if (alive) spriteRenderer.color = Color.black;
-        //     else spriteRenderer.color = Color.white;
 
-        if (alive) spriteRenderer.enabled = true;
-            else spriteRenderer.enabled = false;
+        if (lifeIn)
+        {
+            spriteRenderer.enabled = true;
+            spriteRenderer.color = life.aliveColor;
+            if (stableGenerations > 1)
+                spriteRenderer.color = life.stableColor;
+        }
         
+        if (alive != lifeIn && !lifeIn)
+        {
+            spriteRenderer.color = life.dyingColor;
+        }
+
+        if (stableGenerations > 1 && lifeIn)
+        {
+            spriteRenderer.color = life.stableColor;
+        }
+
+        if (alive == lifeIn && !lifeIn)
+        {
+            spriteRenderer.enabled = false;
+        }
+
+        
+        // if (lifeIn)
+        // {
+        //     spriteRenderer.enabled = true;
+        // }
+        // else
+        // {
+        //     spriteRenderer.enabled = false;
+        // }
+        alive = lifeIn;
     }
 }
