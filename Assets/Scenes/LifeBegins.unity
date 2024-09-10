@@ -329,12 +329,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   refSquare: {fileID: 1799692141}
   refreshRate: 0.1
-  aliveColor: {r: 1, g: 0.12013291, b: 0, a: 1}
-  dyingColor: {r: 0.4917066, g: 0.7987421, b: 0.113029435, a: 1}
-  stableColor: {r: 0, g: 0.10273242, b: 1, a: 1}
-  xArraySize: 200
-  yArraySize: 150
-  lifeChance: 25
+  aliveColor: {r: 1, g: 1, b: 1, a: 1}
+  dyingColor: {r: 0, g: 0, b: 0, a: 1}
+  stableColor: {r: 0.5210047, g: 0, b: 1, a: 1}
+  oscilatingColor: {r: 0, g: 1, b: 0.82872844, a: 1}
+  xArraySize: 30
+  yArraySize: 30
+  lifeChance: 0
   stableCells: 29478
   unstableGenerations: 2265
   stable: 0
