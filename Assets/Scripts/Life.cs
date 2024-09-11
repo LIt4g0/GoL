@@ -2,6 +2,7 @@
 //using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+//using System.Numerics;
 using UnityEngine;
 
 public class Life : MonoBehaviour
@@ -22,10 +23,12 @@ public class Life : MonoBehaviour
     [SerializeField] int stableCells = 0;
     [SerializeField] int unstableGenerations;
     [SerializeField] bool stable;
+    [SerializeField] bool wrapping;
     [SerializeField] float gridGap = 0.1f;
     bool playing = false;
     Camera cam;
-  
+    
+
     void Start()
     {
         cam = Camera.main;
@@ -41,14 +44,14 @@ public class Life : MonoBehaviour
         {
             for (int y = 0; y < yArraySize; y++)
             {
-                var newO = new GameObject("Cell :" + x + ", " + y);
-                SpriteRenderer newOSprite = newO.AddComponent<SpriteRenderer>();
-                newOSprite.sprite = Sprite.Create(refTexture, new Rect(0,0,refTexture.width,refTexture.height ),new Vector3(0.5f,0.5f,0.5f));
-                newOSprite.sortingOrder = - 1;
+                Vector2 newPos = new Vector2(-xArraySize*0.5f + x,-yArraySize*0.5f + y);
+                var newO = Instantiate(cellPrefab, newPos, Quaternion.identity);
+                newO.SetActive(true);
                 if (Random.Range(0,100) < lifeChance) toLive = true;
                     else toLive = false;
 
-                xy[x,y] = new Cell(newO.transform, -xArraySize*0.5f + x,-yArraySize*0.5f + y,toLive, newOSprite, this);
+                xy[x,y] = newO.GetComponent<Cell>();
+                xy[x,y].SetStartInfo(toLive,this);
             }
         }
     }
@@ -91,8 +94,8 @@ public class Life : MonoBehaviour
         if (Input.GetButtonDown("Fire2"))
         {
             //FireAcorn();
-            //FirePulsar();
-            FirePenta();
+            FirePulsar();
+            //FirePenta();
         }
 
         if (Input.GetKeyDown("backspace"))
@@ -136,38 +139,67 @@ public class Life : MonoBehaviour
 
     private void CheckCells()
     {
-        //Debug.Log("//Do cycle of checks");
         hasChecked = true;
         for (int x = 0; x < xy.GetLength(0); x++)
         {
             for (int y = 0; y < xy.GetLength(1); y++)
             {
-                Cell thisCell = xy[x, y];
-                int xPos = x;
-                int yPos = y;
                 int aliveNeighbours = 0;
+                if (wrapping)
+                {
+                    aliveNeighbours = CheckNeighboursWrapping(x, y, aliveNeighbours);
+                }
+                else
+                {
+                    aliveNeighbours = CheckNeighbours(x, y, aliveNeighbours);
+                }
 
-                bool left = (xPos == 0); //Debug.Log("I am all the way to the left");
-                bool right = (xPos == xArraySize - 1);// Debug.Log("I am all the way to the right");
-                bool bottom = (yPos == 0);// Debug.Log("I am all the way in the bottom");
-                bool top = (yPos == yArraySize - 1);// Debug.Log("I am all the way in the top");
+                xy[x, y].aliveNeighbours = aliveNeighbours;
 
-                //below checks
-                if (!bottom && xy[x, y - 1].alive) aliveNeighbours++;// Debug.Log("Has alive neighbour below");
-                if (!bottom && !left && xy[x - 1, y - 1].alive) aliveNeighbours++;// Debug.Log("Has alive neighbour below left");
-                if (!bottom && !right && xy[x + 1, y - 1].alive) aliveNeighbours++;// Debug.Log("Has alive neighbour below left");
-                //above checks
-                if (!top && xy[x, y + 1].alive) aliveNeighbours++;//Debug.Log("Has alive neighbour above");
-                if (!top && !left && xy[x - 1, y + 1].alive) aliveNeighbours++;// Debug.Log("Has alive neighbour top left");
-                if (!top && !right && xy[x + 1, y + 1].alive) aliveNeighbours++;// Debug.Log("Has alive neighbour top left");
-                //left check
-                if (!left && xy[x - 1, y].alive) aliveNeighbours++;//Debug.Log("Has alive neighbour to the left");
-                //right check
-                if (!right && xy[x + 1, y].alive) aliveNeighbours++;//Debug.Log("Has alive neighbour to the right");
-
-                thisCell.aliveNeighbours = aliveNeighbours;
             }
         }
+    }
+
+    private int CheckNeighboursWrapping(int x, int y, int aliveNeighbours)
+    {
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+
+                if (i == 0 && j == 0) continue;
+
+                int nx = (x + i + xArraySize) % xArraySize;
+                int ny = (y + j + yArraySize) % yArraySize;
+                if (xy[nx, ny].alive) aliveNeighbours++;
+            }
+        }
+
+        return aliveNeighbours;
+    }
+
+    private int CheckNeighbours(int x, int y, int aliveNeighbours)
+    {
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                // Skip the current cell
+                if (i == 0 && j == 0) continue;
+
+                // Check if the neighboring cell is within the grid bounds
+                int nx = x + i;
+                int ny = y + j;
+
+                if (nx >= 0 && nx < xArraySize && ny >= 0 && ny < yArraySize)
+                {
+                    // Count if the neighboring cell is alive
+                    if (xy[nx, ny].alive) aliveNeighbours++;
+                }
+            }
+        }
+
+        return aliveNeighbours;
     }
 
     private void UpdateCells()
@@ -178,7 +210,6 @@ public class Life : MonoBehaviour
         {
             for (int y = 0; y < xy.GetLength(1); y++)
             {
-
                 Cell thisCell = xy[x, y];
                 bool alive = thisCell.alive;
                 bool setAlive = alive;
@@ -354,132 +385,132 @@ public class Life : MonoBehaviour
     }
 }
 
-public class Cell
-{
-    public Vector2 position;
-    Life life;
-    Transform transform;
-    public bool alive;
-    List<bool> prevStates = new List<bool>(){false,false,false};
-    List<bool> secondStates= new List<bool>();
-    List<bool> firstStates= new List<bool>();
+// public class Cell
+// {
+//     public Vector2 position;
+//     Life life;
+//     Transform transform;
+//     public bool alive;
+//     List<bool> prevStates = new List<bool>(){false,false,false};
+//     List<bool> secondStates= new List<bool>();
+//     List<bool> firstStates= new List<bool>();
 
-    SpriteRenderer spriteRenderer;
-    public int aliveNeighbours;
-    public int stableGenerations = 0;
-    public int deadCount = 0;
-    bool oscilating = false;
+//     SpriteRenderer spriteRenderer;
+//     public int aliveNeighbours;
+//     public int stableGenerations = 0;
+//     public int deadCount = 0;
+//     bool oscilating = false;
 
-    public Cell(Transform artHolderGameObject, float x, float y, bool live, SpriteRenderer spriteRendererIn, Life lifeClass)
-    {
-        position = new Vector2(x, y);
-        transform = artHolderGameObject;
-        transform.position += (Vector3)position;
-        spriteRenderer = spriteRendererIn;
-        life = lifeClass;
-        SetLife(live);
-    }
+//     public Cell(Transform artHolderGameObject, bool live, SpriteRenderer spriteRendererIn, Life lifeClass)
+//     {
+//         //position = new Vector2(x, y);
+//         transform = artHolderGameObject;
+//         //transform.position += (Vector3)position;
+//         spriteRenderer = spriteRendererIn;
+//         life = lifeClass;
+//         SetLife(live);
+//     }
 
-    public void SetLife(bool lifeIn)
-    {
-        if (!lifeIn) deadCount ++;
-            else deadCount = 0;
+//     public void SetLife(bool lifeIn)
+//     {
+//         if (!lifeIn) deadCount ++;
+//             else deadCount = 0;
         
-        prevStates.Insert(0,lifeIn);
-        bool thisLifeStability = false;
-        //clean list at random points to separate performance costs
-        if (prevStates.Count > Random.Range(100,250))
-        {
-            prevStates.RemoveRange(50,prevStates.Count()-50);
-            //Debug.Log("Wiped end of lists");
-        }
+//         prevStates.Insert(0,lifeIn);
+//         bool thisLifeStability = false;
+//         //clean list at random points to separate performance costs
+//         if (prevStates.Count > Random.Range(100,250))
+//         {
+//             prevStates.RemoveRange(50,prevStates.Count()-50);
+//             //Debug.Log("Wiped end of lists");
+//         }
     
 
-        // store relvenat states in new list, compare lists:
+//         // store relvenat states in new list, compare lists:
         
-        int checkLength = 3;
-        //Debug.Log(checkLength);
-        if (prevStates.Count > checkLength*2 && deadCount < 20)
-        {
-            firstStates = new List<bool>(prevStates.GetRange(0, checkLength));
-            secondStates = new List<bool>(prevStates.GetRange(checkLength,checkLength));
-            // Attempt to check
-            if (secondStates.SequenceEqual(firstStates))
-            {
-                thisLifeStability = true;
-            }
-            else
-            {
-                checkLength = 15;
-                if (prevStates.Count > checkLength*2 && deadCount < 20)
-                {
-                    firstStates = new List<bool>(prevStates.GetRange(0, checkLength));
-                    secondStates = new List<bool>(prevStates.GetRange(checkLength,checkLength));
-                    // Attempt to check
-                    if (secondStates.SequenceEqual(firstStates))
-                    {
-                        thisLifeStability = true;
-                    }
-                }
-            }
-        }
+//         int checkLength = 3;
+//         //Debug.Log(checkLength);
+//         if (prevStates.Count > checkLength*2 && deadCount < 20)
+//         {
+//             firstStates = new List<bool>(prevStates.GetRange(0, checkLength));
+//             secondStates = new List<bool>(prevStates.GetRange(checkLength,checkLength));
+//             // Attempt to check
+//             if (secondStates.SequenceEqual(firstStates))
+//             {
+//                 thisLifeStability = true;
+//             }
+//             else
+//             {
+//                 checkLength = 15;
+//                 if (prevStates.Count > checkLength*2 && deadCount < 20)
+//                 {
+//                     firstStates = new List<bool>(prevStates.GetRange(0, checkLength));
+//                     secondStates = new List<bool>(prevStates.GetRange(checkLength,checkLength));
+//                     // Attempt to check
+//                     if (secondStates.SequenceEqual(firstStates))
+//                     {
+//                         thisLifeStability = true;
+//                     }
+//                 }
+//             }
+//         }
 
 
-        // Old system with 1 lookback for stability
-        if (lifeIn == alive)
-        {
-            thisLifeStability = true;
-        }
+//         // Old system with 1 lookback for stability
+//         if (lifeIn == alive)
+//         {
+//             thisLifeStability = true;
+//         }
 
-        if (lifeIn == prevStates[2] && lifeIn != prevStates[1])
-        {
-            thisLifeStability = true;
-            oscilating = true;
-        }
-        else
-        {
-            oscilating = false;
-        }
+//         if (lifeIn == prevStates[2] && lifeIn != prevStates[1])
+//         {
+//             thisLifeStability = true;
+//             oscilating = true;
+//         }
+//         else
+//         {
+//             oscilating = false;
+//         }
 
 
-        if (thisLifeStability) stableGenerations++;
-            else stableGenerations = 0;
+//         if (thisLifeStability) stableGenerations++;
+//             else stableGenerations = 0;
 
-        //Coloration and more
-        if (lifeIn)
-        {
-            spriteRenderer.enabled = true;
-            spriteRenderer.color = life.aliveColor;
-            if (lifeIn == prevStates[1])
-                spriteRenderer.color = life.stableColor;
-        }
+//         //Coloration and more
+//         if (lifeIn)
+//         {
+//             spriteRenderer.enabled = true;
+//             spriteRenderer.color = life.aliveColor;
+//             if (lifeIn == prevStates[1])
+//                 spriteRenderer.color = life.stableColor;
+//         }
         
-        if (alive != lifeIn && !lifeIn)
-        {
-            spriteRenderer.color = life.dyingColor;
-        }
+//         if (alive != lifeIn && !lifeIn)
+//         {
+//             spriteRenderer.color = life.dyingColor;
+//         }
 
-        if (oscilating)
-        {
-            spriteRenderer.color = life.oscilatingColor;
-        }
+//         if (oscilating)
+//         {
+//             spriteRenderer.color = life.oscilatingColor;
+//         }
         
-        if (alive == lifeIn && !lifeIn)
-        {
-            spriteRenderer.enabled = false;
-        }
+//         if (alive == lifeIn && !lifeIn)
+//         {
+//             spriteRenderer.enabled = false;
+//         }
 
-        //primitive on off:
-        // if (lifeIn)
-        // {
-        //     spriteRenderer.enabled = true;
-        // }
-        // else
-        // {
-        //     spriteRenderer.enabled = false;
-        // }
+//         //primitive on off:
+//         if (lifeIn)
+//         {
+//             spriteRenderer.enabled = true;
+//         }
+//         else
+//         {
+//             spriteRenderer.enabled = false;
+//         }
 
         
-        alive = lifeIn;
-    }
-}
+//         alive = lifeIn;
+//     }
+// }
