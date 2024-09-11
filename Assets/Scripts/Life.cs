@@ -8,29 +8,34 @@ using UnityEngine;
 public class Life : MonoBehaviour
 {
     [SerializeField] GameObject cellPrefab;
+
     [SerializeField][Range(0.01f,1.0f)] float refreshRate = 1;
     float refreshTimer = 0;
+
     public Color aliveColor;
     public Color dyingColor;
     public Color stableColor;
     public Color oscilatingColor;
-    [SerializeField] Cell[,] xy;
-    [SerializeField] int columnsMax = 1;
-    [SerializeField] int rowsMax = 1;
-    [SerializeField] int columnsTarget = 1;
-    [SerializeField] int rowsTarget = 1;
-    [SerializeField] int lifeChance = 1;
-    bool hasChecked = false;
+
+    [SerializeField] [Range(5,1000)]int columnsMax = 1;
+    [SerializeField] [Range(5,1000)]int rowsMax = 1;
+    [SerializeField] [Range(5,1000)]int columnsTarget = 1;
+    [SerializeField] [Range(5,1000)]int rowsTarget = 1;
+    [SerializeField]int columnsSpawned;
+    [SerializeField]int rowsSpawned;
+    [SerializeField] [Range(0,100)]int lifeChance = 1;
+
     [SerializeField] int stableCells = 0;
     [SerializeField] int unstableGenerations;
     [SerializeField] bool stable;
     [SerializeField] bool wrapping;
-    [SerializeField] float gridGap = 0.1f;
-    bool playing = false;
+
+    //[SerializeField] float gridGap = 0.1f;
     Camera cam;
-    [SerializeField]int columnsSpawned;
-    [SerializeField]int rowsSpawned;
-    
+    Cell[,] xy;
+    bool playing = false;
+    bool hasChecked = false;
+    Vector2 startPos;
 
     void Start()
     {
@@ -41,21 +46,20 @@ public class Life : MonoBehaviour
         xy = new Cell[columnsMax,rowsMax];
         //columnsTarget = columnsMax;
         //rowsTarget = rowsMax;
-
-
+        startPos = new Vector2(0,0);
         for (int x = 0; x < columnsTarget; x++)
         {
             for (int y = 0; y < rowsTarget; y++)
             {
-                SpawnCell(x, y);
+                SpawnCells(x, y);
             }
         }
         columnsSpawned = columnsTarget;
         rowsSpawned = rowsTarget;
-        cam.transform.position = new Vector3((columnsSpawned-1)*0.5f,(rowsSpawned-1)*0.5f,cam.transform.position.z);
+        cam.transform.position = new Vector3(((columnsSpawned-1)*0.5f)-startPos.x,((rowsSpawned-1)*0.5f)-startPos.y,cam.transform.position.z);
     }
 
-    private void SpawnCell(int x, int y)
+    private void SpawnCells(int x, int y)
     {
         if (xy[x,y] != null)
         {
@@ -63,7 +67,8 @@ public class Life : MonoBehaviour
             return;
         } 
         bool toLive = false;
-        Vector2 newPos = new Vector2(x, y);
+        Vector2 newPos = new Vector2(x-startPos.x, y-startPos.y);
+        //if (flip) newPos = new Vector2(x+startPos.x, y-startPos.y);
         var newO = Instantiate(cellPrefab, newPos, Quaternion.identity);
         if (Random.Range(0, 100) < lifeChance) toLive = true;
 
@@ -71,44 +76,36 @@ public class Life : MonoBehaviour
         xy[x, y].SetStartInfo(toLive, this);
     }
 
+    private void DespawnCells(int x, int y)
+    {
+        if (xy[x,y] == null)
+        {
+            Debug.Log("Despawned already");
+            return;
+        } 
+        Destroy(xy[x, y].gameObject);
+        xy[x,y] = null;
+    }
+
     void Update()
     {
-        CheckAndAddNewColumnsRows();
+        CheckAndSetColumnsRows();
 
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
-            //fix bug with zooming through zero and flipping it. zoom at distance also seems slows
-            cam.orthographicSize -= Input.GetAxisRaw("Mouse ScrollWheel") * 5f;
+            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize - (Input.GetAxisRaw("Mouse ScrollWheel") * 100f *Time.deltaTime),1,510);
             Vector2 camToMouse = cam.ScreenToWorldPoint(Input.mousePosition);
-            Debug.Log(camToMouse);
-            camToMouse = (camToMouse - (Vector2)cam.transform.position);
-            camToMouse *= Mathf.Clamp(Input.GetAxisRaw("Mouse ScrollWheel") * 1f,0, 3f);
-            cam.transform.position += (Vector3)camToMouse;
+            camToMouse -= (Vector2)cam.transform.position;
+            camToMouse *= Mathf.Clamp(Input.GetAxisRaw("Mouse ScrollWheel") ,0, 50f);
+            cam.transform.position += (Vector3)camToMouse*30f*Time.deltaTime;
         }
 
         if (Input.GetButton("Fire3"))
         {
             Vector3 pan = Vector3.zero;
-            pan.x = -Input.GetAxis("Mouse X");
-            pan.y = -Input.GetAxis("Mouse Y");
-            cam.transform.position += pan;
-        }
-
-        if (Input.GetButtonDown("Jump"))
-        {
-            playing = !playing;
-        }
-
-        if (playing) refreshTimer -= Time.deltaTime;
-
-        if (!hasChecked && refreshTimer < 0)
-        {
-            CheckCells();
-        }
-
-        if (hasChecked)
-        {
-            UpdateCells();
+            pan.x = Mathf.Clamp(-Input.GetAxisRaw("Mouse X"), -1,1);
+            pan.y = Mathf.Clamp(-Input.GetAxisRaw("Mouse Y"), -1,1);
+            cam.transform.position += pan*cam.orthographicSize*2.5f*Time.deltaTime;
         }
 
         if (Input.GetButton("Fire1"))
@@ -127,9 +124,26 @@ public class Life : MonoBehaviour
         {
             ResetGrid();
         }
+
+        if (Input.GetButtonDown("Jump"))
+        {
+            playing = !playing;
+        }
+
+        if (playing) refreshTimer -= Time.deltaTime;
+
+        if (!hasChecked && refreshTimer < 0)
+        {
+            CheckCells();
+        }
+
+        if (hasChecked)
+        {
+            UpdateCells();
+        }
     }
 
-    private void CheckAndAddNewColumnsRows()
+    private void CheckAndSetColumnsRows()
     {
         if (columnsTarget > columnsSpawned)
         {
@@ -138,15 +152,22 @@ public class Life : MonoBehaviour
                 columnsTarget = columnsMax;
                 return;
             }
-            // for (int x = columnsSpawned; x < columnsTarget; x++)
-            // {
-                for (int y = 0; y < rowsSpawned; y++)
-                {
-                    SpawnCell(columnsSpawned, y);
-                }
-            // }
+            
+            for (int y = 0; y < rowsSpawned; y++)
+            {
+                SpawnCells(columnsSpawned, y);
+            }
             columnsSpawned ++;
         }
+        else if (columnsTarget < columnsSpawned)
+        {
+            for (int y = 0; y < rowsSpawned; y++)
+            {
+                DespawnCells(columnsSpawned+1, y);
+            }
+            columnsSpawned --;
+        }
+
         if (rowsTarget > rowsSpawned)
         {
             if (rowsTarget > rowsMax)
@@ -154,15 +175,40 @@ public class Life : MonoBehaviour
                 rowsTarget = rowsMax;
                 return;
             }
-            // for (int y = rowsSpawned; y < rowsTarget; y++)
-            // {
-                for (int x = 0; x < columnsSpawned; x++)
-                {
-                    SpawnCell(x, rowsSpawned);
-                }
-            // }
+            for (int x = 0; x < columnsSpawned; x++)
+            {
+                SpawnCells(x, rowsSpawned);
+            }
             rowsSpawned ++;
         }
+        else if (rowsTarget < rowsSpawned)
+        {
+            for (int x = 0; x < columnsSpawned; x++)
+            {
+                DespawnCells(x, rowsSpawned+1);
+            }
+            rowsSpawned --;
+        }
+    }
+
+    private void GetClickPosToGrid(out int xPos, out int yPos)
+    {
+        Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
+
+        // float xClick = Mathf.Clamp(mousePos.x, 0, columnsSpawned - 1);
+        // float yClick = Mathf.Clamp(mousePos.y, 0, rowsSpawned - 1);
+        float xClick = Mathf.Clamp(mousePos.x + startPos.x, 0, columnsSpawned);
+        float yClick = Mathf.Clamp(mousePos.y + startPos.y, 0, rowsSpawned);
+
+        xPos = Mathf.Clamp(Mathf.RoundToInt(xClick),0,columnsMax-1);
+        yPos = Mathf.Clamp(Mathf.RoundToInt(yClick),0,rowsMax-1);
+
+        if (Mathf.Clamp(xPos+1,0,columnsMax) > columnsSpawned) columnsTarget ++;
+        if (Mathf.Clamp(yPos+1,0,rowsMax) > rowsSpawned) rowsTarget ++;
+        // bool check = false;
+        // if (mousePos.x < startPos.x*-1) check = true;
+
+        CheckAndSetColumnsRows();
     }
 
     private void ResetGrid()
@@ -187,15 +233,6 @@ public class Life : MonoBehaviour
         }
     }
 
-    private void GetClickPosToGrid(out int xPos, out int yPos)
-    {
-        Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
-
-        float xClick = Mathf.Clamp(mousePos.x, 0, columnsSpawned - 1);
-        float yClick = Mathf.Clamp(mousePos.y, 0, rowsSpawned - 1);
-        xPos = Mathf.RoundToInt(xClick);
-        yPos = Mathf.RoundToInt(yClick);
-    }
 
 
     private void CheckCells()
@@ -265,7 +302,6 @@ public class Life : MonoBehaviour
 
     private void UpdateCells()
     {
-
         stableCells = 0;
         for (int x = 0; x < columnsSpawned; x++)
         {

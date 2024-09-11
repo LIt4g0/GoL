@@ -251,14 +251,15 @@ MonoBehaviour:
   oscilatingColor: {r: 0, g: 1, b: 0.82872844, a: 1}
   columnsMax: 1000
   rowsMax: 1000
-  columnsTarget: 20
-  rowsTarget: 20
+  columnsTarget: 5
+  rowsTarget: 5
+  columnsSpawned: 0
+  rowsSpawned: 0
   lifeChance: 100
   stableCells: 0
   unstableGenerations: 2265
   stable: 0
   wrapping: 0
-  gridGap: 5
 --- !u!4 &2118637557
 Transform:
   m_ObjectHideFlags: 0
