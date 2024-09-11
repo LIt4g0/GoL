@@ -19,11 +19,7 @@ public class Cell : MonoBehaviour
 
     public Cell()
     {
-        //position = new Vector2(x, y);
-        //transform = artHolderGameObject;
-        //transform.position += (Vector3)position;
-        //life = lifeClass;
-        //SetLife(live);
+
     }
 
     public void SetStartInfo(bool live, Life lifeClass)
@@ -31,7 +27,6 @@ public class Cell : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         life = lifeClass;
         SetLife(live);
-        //spriteRenderer = Get;
     }
 
     public void SetLife(bool lifeIn)
@@ -78,14 +73,6 @@ public class Cell : MonoBehaviour
                 }
             }
         }
-        int[] x = new int[5];
-        int[] y = new int[5];
-        if (x == y)
-        {
-
-        }
-
-        if (firstStates == secondStates)
 
         // Old system with 1 lookback for stability
         if (lifeIn == alive)
@@ -102,7 +89,6 @@ public class Cell : MonoBehaviour
         {
             oscilating = false;
         }
-
 
         if (thisLifeStability) stableGenerations++;
             else stableGenerations = 0;
@@ -121,7 +107,7 @@ public class Cell : MonoBehaviour
             spriteRenderer.color = life.dyingColor;
         }
 
-        if (oscilating)
+        if (oscilating && lifeIn)
         {
             spriteRenderer.color = life.oscilatingColor;
         }
@@ -136,12 +122,8 @@ public class Cell : MonoBehaviour
         {
             spriteRenderer.enabled = true;
         }
-        else
-        {
-            spriteRenderer.enabled = false;
-        }
 
-        
+
         alive = lifeIn;
     }
 }
