@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class Life : MonoBehaviour
 {
-    [SerializeField] GameObject refSquare;
+    [SerializeField] GameObject cellPrefab;
     [SerializeField][Range(0.01f,1.0f)] float refreshRate = 1;
     float refreshTimer = 0;
     public Color aliveColor;
@@ -31,8 +31,8 @@ public class Life : MonoBehaviour
         cam = Camera.main;
         Application.targetFrameRate = 60;
         unstableGenerations = 0;
-        refTexture = refSquare.GetComponent<SpriteRenderer>().sprite.texture;
-        refSquare.SetActive(false);
+        refTexture = cellPrefab.GetComponent<SpriteRenderer>().sprite.texture;
+        cellPrefab.SetActive(false);
         
         xy = new Cell[xArraySize,yArraySize];
         
@@ -43,7 +43,7 @@ public class Life : MonoBehaviour
             {
                 var newO = new GameObject("Cell :" + x + ", " + y);
                 SpriteRenderer newOSprite = newO.AddComponent<SpriteRenderer>();
-                newOSprite.sprite = Sprite.Create(refTexture, new Rect(0,0,100-gridGap,100-gridGap),new Vector3(0.5f,0.5f,0.5f));
+                newOSprite.sprite = Sprite.Create(refTexture, new Rect(0,0,refTexture.width,refTexture.height ),new Vector3(0.5f,0.5f,0.5f));
                 newOSprite.sortingOrder = - 1;
                 if (Random.Range(0,100) < lifeChance) toLive = true;
                     else toLive = false;
@@ -57,6 +57,14 @@ public class Life : MonoBehaviour
     {
 
         cam.orthographicSize -= Input.GetAxisRaw("Mouse ScrollWheel")*5f;
+
+        if (Input.GetButton("Fire3"))
+        {
+            Vector3 pan = Vector3.zero;
+            pan.x = -Input.GetAxis("Mouse X");
+            pan.y = -Input.GetAxis("Mouse Y");
+            cam.transform.position += pan;
+        }
 
         if (Input.GetButtonDown("Jump"))
         {
