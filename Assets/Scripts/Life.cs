@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 //using System.Numerics;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class Life : MonoBehaviour
 {
@@ -29,6 +30,10 @@ public class Life : MonoBehaviour
     [SerializeField] int unstableGenerations;
     [SerializeField] bool stable;
     [SerializeField] bool wrapping;
+    
+    [SerializeField] [Range(1,500)]float zoomSpeed = 100f;
+    [SerializeField] [Range(0,50)]float zoomAimMod = 5;
+    [SerializeField] [Range(1,50)]float panSpeed = 5;
 
     //[SerializeField] float gridGap = 0.1f;
     Camera cam;
@@ -36,13 +41,14 @@ public class Life : MonoBehaviour
     bool playing = false;
     bool hasChecked = false;
     Vector2 startPos;
+    EventSystem eventSystem;
 
     void Start()
     {
         cam = Camera.main;
         Application.targetFrameRate = 60;
         unstableGenerations = 0;
-        
+        eventSystem = EventSystem.current; //FindObjectOfType<EventSystem>();
         xy = new Cell[columnsMax,rowsMax];
         //columnsTarget = columnsMax;
         //rowsTarget = rowsMax;
@@ -51,7 +57,7 @@ public class Life : MonoBehaviour
         {
             for (int y = 0; y < rowsTarget; y++)
             {
-                SpawnCells(x, y);
+                SpawnCell(x, y);
             }
         }
         columnsSpawned = columnsTarget;
@@ -59,7 +65,7 @@ public class Life : MonoBehaviour
         cam.transform.position = new Vector3(((columnsSpawned-1)*0.5f)-startPos.x,((rowsSpawned-1)*0.5f)-startPos.y,cam.transform.position.z);
     }
 
-    private void SpawnCells(int x, int y)
+    private void SpawnCell(int x, int y)
     {
         if (xy[x,y] != null)
         {
@@ -93,27 +99,27 @@ public class Life : MonoBehaviour
 
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
-            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize - (Input.GetAxisRaw("Mouse ScrollWheel") * 100f *Time.deltaTime),1,510);
+            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize - (Input.GetAxisRaw("Mouse ScrollWheel") * zoomSpeed *Time.deltaTime),1,5000);
             Vector2 camToMouse = cam.ScreenToWorldPoint(Input.mousePosition);
             camToMouse -= (Vector2)cam.transform.position;
-            camToMouse *= Mathf.Clamp(Input.GetAxisRaw("Mouse ScrollWheel") ,0, 50f);
-            cam.transform.position += (Vector3)camToMouse*30f*Time.deltaTime;
+            camToMouse *= Mathf.Clamp(Input.GetAxisRaw("Mouse ScrollWheel") ,0, 1f);
+            cam.transform.position += (Vector3)camToMouse*zoomAimMod*cam.orthographicSize*Time.deltaTime;
         }
 
-        if (Input.GetButton("Fire3"))
+        if (Input.GetButton("Fire3") && !eventSystem.IsPointerOverGameObject())
         {
             Vector3 pan = Vector3.zero;
             pan.x = Mathf.Clamp(-Input.GetAxisRaw("Mouse X"), -1,1);
             pan.y = Mathf.Clamp(-Input.GetAxisRaw("Mouse Y"), -1,1);
-            cam.transform.position += pan*cam.orthographicSize*2.5f*Time.deltaTime;
+            cam.transform.position += pan*cam.orthographicSize*panSpeed*Time.deltaTime;
         }
 
-        if (Input.GetButton("Fire1"))
+        if (Input.GetButton("Fire1") && !eventSystem.IsPointerOverGameObject())
         {
             FireCell();
         }
 
-        if (Input.GetButtonDown("Fire2"))
+        if (Input.GetButtonDown("Fire2") && !eventSystem.IsPointerOverGameObject())
         {
             //FireAcorn();
             FirePulsar();
@@ -122,12 +128,12 @@ public class Life : MonoBehaviour
 
         if (Input.GetKeyDown("backspace"))
         {
-            ResetGrid();
+            ClearLife();
         }
 
         if (Input.GetButtonDown("Jump"))
         {
-            playing = !playing;
+            PlayPause();
         }
 
         if (playing) refreshTimer -= Time.deltaTime;
@@ -143,6 +149,11 @@ public class Life : MonoBehaviour
         }
     }
 
+    public void PlayPause()
+    {
+        playing = !playing;
+    }
+
     private void CheckAndSetColumnsRows()
     {
         if (columnsTarget > columnsSpawned)
@@ -155,7 +166,7 @@ public class Life : MonoBehaviour
             
             for (int y = 0; y < rowsSpawned; y++)
             {
-                SpawnCells(columnsSpawned, y);
+                SpawnCell(columnsSpawned, y);
             }
             columnsSpawned ++;
         }
@@ -177,7 +188,7 @@ public class Life : MonoBehaviour
             }
             for (int x = 0; x < columnsSpawned; x++)
             {
-                SpawnCells(x, rowsSpawned);
+                SpawnCell(x, rowsSpawned);
             }
             rowsSpawned ++;
         }
@@ -191,6 +202,19 @@ public class Life : MonoBehaviour
         }
     }
 
+    public void SpawnLife()
+    {
+        ClearLife();
+        for (int x = 0; x < columnsTarget; x++)
+        {
+            for (int y = 0; y < rowsTarget; y++)
+            {
+                bool toLive = false;
+                if (Random.Range(0, 100) < lifeChance) toLive = true;
+                xy[x,y].SetLife(toLive);
+            }
+        }
+    }
     private void GetClickPosToGrid(out int xPos, out int yPos)
     {
         Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
@@ -211,7 +235,7 @@ public class Life : MonoBehaviour
         CheckAndSetColumnsRows();
     }
 
-    private void ResetGrid()
+    public void ClearLife()
     {
         for (int x = 0; x < columnsSpawned; x++)
         {
