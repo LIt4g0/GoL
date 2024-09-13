@@ -7,11 +7,13 @@ public class MenuControl : MonoBehaviour
     [SerializeField] RectTransform menuPanel;
     [SerializeField] RectTransform showMenuButton;
     [SerializeField] RectTransform helpMenu;
+    [SerializeField] TMPro.TMP_Text stable;
+    //Life life;
     bool showMenu = true;
     bool showHelp = true;
     void Start()
     {
-        
+        //life = FindObjectOfType<Life>();
     }
 
     public void HideShowMenu()
@@ -26,5 +28,14 @@ public class MenuControl : MonoBehaviour
         showHelp = !showHelp;
 
         helpMenu.gameObject.SetActive(showHelp);
+    }
+    public void SetStableText(bool inStable, int percentage)
+    {
+        string newString = " ";
+        newString = percentage + "% of cells have stabilized";
+        if (inStable) newString = "Simulation has stabilized!";
+
+        Debug.Log(percentage);
+        stable.text = newString;
     }
 }

@@ -11,6 +11,7 @@ public class Life : MonoBehaviour
 {
     [SerializeField] GameObject cellPrefab;
     [SerializeField] TMPro.TMP_Dropdown selectorDropDown;
+    [SerializeField] MenuControl menu;
 
 
     [SerializeField][Range(0.01f,1.0f)] float refreshRate = 1;
@@ -103,11 +104,11 @@ public class Life : MonoBehaviour
 
         if (Input.GetAxis("Mouse ScrollWheel") != 0)
         {
-            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize - (Input.GetAxisRaw("Mouse ScrollWheel") * zoomSpeed *Time.deltaTime),1,5000);
+            cam.orthographicSize = Mathf.Clamp(cam.orthographicSize - (Input.GetAxisRaw("Mouse ScrollWheel") * zoomSpeed *Time.deltaTime),1,Mathf.Infinity);
             Vector2 camToMouse = cam.ScreenToWorldPoint(Input.mousePosition);
             camToMouse -= (Vector2)cam.transform.position;
             camToMouse *= Mathf.Clamp(Input.GetAxisRaw("Mouse ScrollWheel") ,0, 1f);
-            cam.transform.position += (Vector3)camToMouse*zoomAimMod*Time.deltaTime;
+            cam.transform.position += Time.deltaTime * zoomAimMod * (Vector3)camToMouse;
         }
 
         if (Input.GetButton("Fire3") && !eventSystem.IsPointerOverGameObject())
@@ -115,7 +116,7 @@ public class Life : MonoBehaviour
             Vector3 pan = Vector3.zero;
             pan.x = Mathf.Clamp(-Input.GetAxisRaw("Mouse X"), -1,1);
             pan.y = Mathf.Clamp(-Input.GetAxisRaw("Mouse Y"), -1,1);
-            cam.transform.position += pan*cam.orthographicSize*panSpeed*Time.deltaTime;
+            cam.transform.position += cam.orthographicSize * panSpeed * Time.deltaTime * pan;
         }
 
         if (Input.GetButton("Fire1") && !eventSystem.IsPointerOverGameObject())
@@ -400,6 +401,8 @@ public class Life : MonoBehaviour
             stable = false;
             unstableGenerations ++;
         }
+        float percentage = ((float)stableCells/((float)columnsSpawned*(float)rowsSpawned))*100.0f;
+        menu.SetStableText(stable, (int)percentage);
         
         refreshTimer = refreshRate;
         hasChecked = false;
