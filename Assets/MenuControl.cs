@@ -1,13 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class MenuControl : MonoBehaviour
 {
     [SerializeField] RectTransform menuPanel;
+    [SerializeField] RectTransform showMenuButton;
+    [SerializeField] RectTransform helpMenu;
     bool showMenu = true;
-    // Start is called before the first frame update
+    bool showHelp = true;
     void Start()
     {
         
@@ -18,5 +19,12 @@ public class MenuControl : MonoBehaviour
         showMenu = !showMenu;
 
         menuPanel.gameObject.SetActive(showMenu);
+        showMenuButton.gameObject.SetActive(!showMenu);
+    }
+    public void HideShowHelp()
+    {
+        showHelp = !showHelp;
+
+        helpMenu.gameObject.SetActive(showHelp);
     }
 }

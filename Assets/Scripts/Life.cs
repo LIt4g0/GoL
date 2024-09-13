@@ -5,10 +5,13 @@ using System.Linq;
 //using System.Numerics;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 public class Life : MonoBehaviour
 {
     [SerializeField] GameObject cellPrefab;
+    [SerializeField] TMPro.TMP_Dropdown selectorDropDown;
+
 
     [SerializeField][Range(0.01f,1.0f)] float refreshRate = 1;
     float refreshTimer = 0;
@@ -35,6 +38,7 @@ public class Life : MonoBehaviour
     [SerializeField] [Range(0,50)]float zoomAimMod = 5;
     [SerializeField] [Range(1,50)]float panSpeed = 5;
 
+    [Range(0,2)]public int spawnType = 0;
     //[SerializeField] float gridGap = 0.1f;
     Camera cam;
     Cell[,] xy;
@@ -103,7 +107,7 @@ public class Life : MonoBehaviour
             Vector2 camToMouse = cam.ScreenToWorldPoint(Input.mousePosition);
             camToMouse -= (Vector2)cam.transform.position;
             camToMouse *= Mathf.Clamp(Input.GetAxisRaw("Mouse ScrollWheel") ,0, 1f);
-            cam.transform.position += (Vector3)camToMouse*zoomAimMod*cam.orthographicSize*Time.deltaTime;
+            cam.transform.position += (Vector3)camToMouse*zoomAimMod*Time.deltaTime;
         }
 
         if (Input.GetButton("Fire3") && !eventSystem.IsPointerOverGameObject())
@@ -121,9 +125,7 @@ public class Life : MonoBehaviour
 
         if (Input.GetButtonDown("Fire2") && !eventSystem.IsPointerOverGameObject())
         {
-            //FireAcorn();
-            FirePulsar();
-            //FirePenta();
+            SpawnSpecial();
         }
 
         if (Input.GetKeyDown("backspace"))
@@ -149,9 +151,34 @@ public class Life : MonoBehaviour
         }
     }
 
+    private void SpawnSpecial()
+    {
+        switch (spawnType)
+        {
+            case 0:
+                FireAcorn();
+                break;
+            case 1:
+                FirePulsar();
+                break;
+            case 2:
+                FirePenta();
+                break;
+            default:
+                break;
+        }
+    }
+
     public void PlayPause()
     {
         playing = !playing;
+    }
+
+    public void SetSpawnType()
+    {
+        spawnType = selectorDropDown.value;
+        //spawnType = inType;
+        //if (spawnType > 2) spawnType = 0;
     }
 
     private void CheckAndSetColumnsRows()
