@@ -35,7 +35,7 @@ public class MenuControl : MonoBehaviour
         newString = percentage + "% of cells have stabilized";
         if (inStable) newString = "Simulation has stabilized!";
 
-        Debug.Log(percentage);
         stable.text = newString;
+        
     }
 }
