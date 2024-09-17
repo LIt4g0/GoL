@@ -10,12 +10,16 @@ public class Cell : MonoBehaviour
     List<bool> prevStates = new List<bool>(){false,false,false};
     List<bool> secondStates= new List<bool>();
     List<bool> firstStates= new List<bool>();
+    Color lerpedColor;
+    Color prevColor;
+    Color targetColor;
 
     SpriteRenderer spriteRenderer;
     public int aliveNeighbours;
     public int stableGenerations = 0;
     public int deadCount = 0;
     bool oscilating = false;
+    float t;
 
     public Cell()
     {
@@ -25,6 +29,7 @@ public class Cell : MonoBehaviour
     public void SetStartInfo(bool live, Life lifeClass)
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        spriteRenderer.color = Color.black;
         life = lifeClass;
         SetLife(live);
     }
@@ -38,15 +43,14 @@ public class Cell : MonoBehaviour
         
         bool thisLifeStability = false;
         //clean list at random points to separate performance costs
-        if (prevStates.Count > Random.Range(100,250))
+        if (prevStates.Count > Random.Range(60,120))
         {
-            prevStates.RemoveRange(50,prevStates.Count()-50);
+            prevStates.RemoveRange(60,prevStates.Count()-60);
             //Debug.Log("Wiped end of lists");
         }
     
-
+        if (deadCount > 5 && spriteRenderer.color == life.deadColor) return;
         // store relvenat states in new list, compare lists:
-        
         int checkLength = 3;
         //Debug.Log(checkLength);
         if (prevStates.Count > checkLength*2 && deadCount < 20)
@@ -105,6 +109,7 @@ public class Cell : MonoBehaviour
         if (alive != lifeIn && !lifeIn)
         {
             spriteRenderer.color = life.dyingColor;
+            targetColor = life.deadColor;
         }
 
         if (oscilating && lifeIn)
@@ -112,15 +117,24 @@ public class Cell : MonoBehaviour
             spriteRenderer.color = life.oscilatingColor;
         }
         
-        if (alive == lifeIn && !lifeIn)
+        if (!lifeIn)
+        {
+            t += Time.deltaTime;// incorrect with deltatime but smoother fade life.refreshRate;
+            lerpedColor = Color.Lerp(spriteRenderer.color, targetColor, t / life.deadFadeTime);
+            spriteRenderer.color = lerpedColor;
+        }
+
+        if (alive == lifeIn && !lifeIn && spriteRenderer.color == targetColor)
         {
             spriteRenderer.enabled = false;
+            t = 0;
         }
 
         //primitive on off:
         if (lifeIn)
         {
             spriteRenderer.enabled = true;
+            t = 0;
         }
 
 
