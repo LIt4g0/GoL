@@ -8,6 +8,7 @@ public class MenuControl : MonoBehaviour
     [SerializeField] RectTransform showMenuButton;
     [SerializeField] RectTransform helpMenu;
     [SerializeField] TMPro.TMP_Text stable;
+    [SerializeField] TMPro.TMP_Text generations;
     //Life life;
     bool showMenu = true;
     bool showHelp = true;
@@ -36,6 +37,10 @@ public class MenuControl : MonoBehaviour
         if (inStable) newString = "Simulation has stabilized!";
 
         stable.text = newString;
-        
+    }
+
+    public void SetGenerationText(int generationIn)
+    {
+        generations.text = ""+generationIn;
     }
 }

@@ -27,8 +27,8 @@ public class Life : MonoBehaviour
     [Range(0.00f,10.0f)] public float deadFadeTime = 1.0f;
 
     [Header("Grid Settings")]
-    [SerializeField] [Range(5,1000)]int columnsMax = 1;
-    [SerializeField] [Range(5,1000)]int rowsMax = 1;
+    [Range(5,1000)] int columnsMax = 1000;
+    [Range(5,1000)] int rowsMax = 1000;
     [SerializeField] [Range(5,1000)]int columnsTarget = 1;
     [SerializeField] [Range(5,1000)]int rowsTarget = 1;
     [SerializeField] bool enableWrapping;
@@ -119,7 +119,6 @@ public class Life : MonoBehaviour
         if (hasChecked)
         {
             UpdateCells();
-            cam.backgroundColor = deadColor;
         }
     }
 
@@ -338,7 +337,6 @@ public class Life : MonoBehaviour
                 }
 
                 xy[x, y].aliveNeighbours = aliveNeighbours;
-
             }
         }
     }
@@ -427,25 +425,24 @@ public class Life : MonoBehaviour
         {
             stable = false;
             unstableGenerations ++;
+            menu.SetGenerationText(unstableGenerations);
         }
         float percentage = (float)(stableCells/((float)columnsSpawned*(float)rowsSpawned))*100.0f;
         menu.SetStableText(stable, (int)percentage);
         
         refreshTimer = refreshRate;
         hasChecked = false;
-    
+        cam.backgroundColor = deadColor;
     }
     private void FireCell()
     {
-        int xPos, yPos;
-        GetClickPosToGrid(out xPos, out yPos);
+        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(true);
     }
 
     private void FireAcorn()
     {
-        int xPos, yPos;
-        GetClickPosToGrid(out xPos, out yPos);
+        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(true);
         //Spawn acorn
         CheckAndSetLife(xPos - 2, yPos + 1);
@@ -458,8 +455,7 @@ public class Life : MonoBehaviour
 
     private void FirePulsar()
     {
-        int xPos, yPos;
-        GetClickPosToGrid(out xPos, out yPos);
+        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(false);
         //bottom left pulsar
         CheckAndSetLife(xPos - 1, yPos - 2);
@@ -532,8 +528,7 @@ public class Life : MonoBehaviour
 
     private void FirePenta()
     {
-        int xPos, yPos;
-        GetClickPosToGrid(out xPos, out yPos);
+        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(false);
         //LeftWall
         CheckAndSetLife(xPos - 2, yPos +2);
@@ -564,8 +559,7 @@ public class Life : MonoBehaviour
 
     private void FireLineX()
     {
-        int xPos, yPos;
-        GetClickPosToGrid(out xPos, out yPos);
+        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(true);
         //Fire Line X
         for (int x = 0; x < columnsSpawned; x++)
@@ -576,8 +570,7 @@ public class Life : MonoBehaviour
 
     private void FireLineY()
     {
-        int xPos, yPos;
-        GetClickPosToGrid(out xPos, out yPos);
+        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(true);
         //Fire Line Y
         for (int y = 0; y < rowsSpawned; y++)
@@ -588,8 +581,7 @@ public class Life : MonoBehaviour
 
     private void FireBlock()
     {
-        int xPos, yPos;
-        GetClickPosToGrid(out xPos, out yPos);
+        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(true);
         //Fire block of 20
         for (int y = -10; y < 10; y++)
