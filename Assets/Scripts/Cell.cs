@@ -7,6 +7,7 @@ public class Cell : MonoBehaviour
     public Vector2 position;
     Life life;
     public bool alive;
+    public bool check;
     List<bool> prevStates = new List<bool>(){false,false,false};
     List<bool> secondStates= new List<bool>();
     List<bool> firstStates= new List<bool>();
@@ -39,6 +40,7 @@ public class Cell : MonoBehaviour
         if (!lifeIn) deadCount ++;
             else deadCount = 0;
         
+        if (deadCount > 5 && spriteRenderer.color == life.deadColor) return;
         prevStates.Insert(0,lifeIn);
         
         bool thisLifeStability = false;
@@ -49,7 +51,6 @@ public class Cell : MonoBehaviour
             //Debug.Log("Wiped end of lists");
         }
     
-        if (deadCount > 5 && spriteRenderer.color == life.deadColor) return;
         // store relvenat states in new list, compare lists:
         int checkLength = 3;
         //Debug.Log(checkLength);

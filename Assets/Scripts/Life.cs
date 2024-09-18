@@ -12,6 +12,7 @@ public class Life : MonoBehaviour
     [Header("References")]
     [SerializeField] GameObject cellPrefab;
     [SerializeField] TMPro.TMP_Dropdown selectorDropDown;
+    [SerializeField] TMPro.TMP_Dropdown edgeDropDown;
     [SerializeField] MenuControl menu;
 
     [Header("Cell Refresh")]
@@ -46,7 +47,8 @@ public class Life : MonoBehaviour
     [SerializeField] [Range(0,50)]float zoomAimMod = 5;
     [SerializeField] [Range(1,50)]float panSpeed = 5;
 
-    [HideInInspector]public int spawnType = 0;
+    int spawnType = 0;
+    int edgeType = 0;
     Camera cam;
     Cell[,] xy;
     bool playing = false;
@@ -209,6 +211,26 @@ public class Life : MonoBehaviour
         spawnType = selectorDropDown.value;
     }
 
+    public void SetEdgeType()
+    {
+        edgeType = edgeDropDown.value;
+
+        switch (edgeType)
+        {
+            case 0:
+                enableWrapping = false;
+                break;
+            case 1:
+                enableWrapping = true;
+                break;
+            case 2:
+                enableWrapping = true;
+                break;
+            default:
+                break;
+        }
+    }
+
     private void CheckAndSetColumnsRows()
     {
         if (columnsTarget > columnsSpawned)
@@ -321,11 +343,13 @@ public class Life : MonoBehaviour
 
     private void CheckCells()
     {
+        float checktime = Time.realtimeSinceStartup;
         hasChecked = true;
         for (int x = 0; x < columnsSpawned; x++)
         {
             for (int y = 0; y < rowsSpawned; y++)
             {
+                // if (!xy[x,y].alive) continue;
                 int aliveNeighbours = 0;
                 if (enableWrapping)
                 {
@@ -337,8 +361,31 @@ public class Life : MonoBehaviour
                 }
 
                 xy[x, y].aliveNeighbours = aliveNeighbours;
+                xy[x,y].check = false;
             }
         }
+
+        // for (int x = 0; x < columnsSpawned; x++)
+        // {
+        //     for (int y = 0; y < rowsSpawned; y++)
+        //     {
+        //         if (!xy[x,y].check) continue;
+        //         int aliveNeighbours = 0;
+        //         if (enableWrapping)
+        //         {
+        //             aliveNeighbours = CheckNeighboursWrapping(x, y, aliveNeighbours);
+        //         }
+        //         else
+        //         {
+        //             aliveNeighbours = CheckNeighbours(x, y, aliveNeighbours);
+        //         }
+
+        //         xy[x, y].aliveNeighbours = aliveNeighbours;
+        //         xy[x,y].check = false;
+        //     }
+        // }
+
+        // Debug.Log(Time.realtimeSinceStartup - checktime);
     }
 
     private int CheckNeighboursWrapping(int x, int y, int aliveNeighbours)
@@ -347,12 +394,13 @@ public class Life : MonoBehaviour
         {
             for (int j = -1; j <= 1; j++)
             {
-
                 if (i == 0 && j == 0) continue;
 
                 int nx = (x + i + columnsSpawned) % columnsSpawned;
                 int ny = (y + j + rowsSpawned) % rowsSpawned;
                 if (xy[nx, ny].alive) aliveNeighbours++;
+                    // else
+                    // xy[nx,ny].check = true;
             }
         }
 
@@ -376,6 +424,8 @@ public class Life : MonoBehaviour
                 {
                     // Count if the neighboring cell is alive
                     if (xy[nx, ny].alive) aliveNeighbours++;
+                        // else
+                        // xy[nx,ny].check = true;
                 }
             }
         }
@@ -407,7 +457,7 @@ public class Life : MonoBehaviour
                 {
                     setAlive = false;
                 }
-
+                
                 thisCell.SetLife(setAlive);
                 thisCell.aliveNeighbours = 0;
                 if (thisCell.stableGenerations > 1)
