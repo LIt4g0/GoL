@@ -16,7 +16,7 @@ public class Life : MonoBehaviour
     [SerializeField] MenuControl menu;
 
     [Header("Cell Refresh")]
-    [Range(0.01f,1.0f)] public float refreshRate = 1;
+    [Range(0.01f, 1.0f)] public float refreshRate = 1;
     float refreshTimer = 0;
 
     [Header("Color Management")]
@@ -25,27 +25,27 @@ public class Life : MonoBehaviour
     public Color stableColor;
     public Color oscilatingColor;
     public Color deadColor;
-    [Range(0.00f,10.0f)] public float deadFadeTime = 1.0f;
+    [Range(0.00f, 10.0f)] public float deadFadeTime = 1.0f;
 
     [Header("Grid Settings")]
-    [Range(5,1000)] int columnsMax = 1000;
-    [Range(5,1000)] int rowsMax = 1000;
-    [SerializeField] [Range(5,1000)]int columnsTarget = 1;
-    [SerializeField] [Range(5,1000)]int rowsTarget = 1;
+    [Range(5, 1000)] int columnsMax = 1000;
+    [Range(5, 1000)] int rowsMax = 1000;
+    [SerializeField][Range(5, 1000)] int columnsTarget = 1;
+    [SerializeField][Range(5, 1000)] int rowsTarget = 1;
     [SerializeField] bool enableWrapping;
     [SerializeField] int columnsSpawned;
     [SerializeField] int rowsSpawned;
-    [SerializeField] [Range(0,100)]int chanceOfLife = 1;
+    [SerializeField][Range(0, 100)] int chanceOfLife = 1;
 
     [Header("State of Cells")]
     [SerializeField] bool stable;
     [SerializeField] int stableCells = 0;
     [SerializeField] int unstableGenerations;
-    
+
     [Header("Camera Settings")]
-    [SerializeField] [Range(1,500)]float zoomSpeed = 100f;
-    [SerializeField] [Range(0,50)]float zoomAimMod = 5;
-    [SerializeField] [Range(1,50)]float panSpeed = 5;
+    [SerializeField][Range(1, 500)] float zoomSpeed = 100f;
+    [SerializeField][Range(0, 50)] float zoomAimMod = 5;
+    [SerializeField][Range(1, 50)] float panSpeed = 5;
 
     int spawnType = 0;
     int edgeType = 0;
@@ -62,10 +62,10 @@ public class Life : MonoBehaviour
         Application.targetFrameRate = 60;
         unstableGenerations = 0;
         eventSystem = EventSystem.current;
-        xy = new Cell[columnsMax,rowsMax];
+        xy = new Cell[columnsMax, rowsMax];
         columnsTarget = (int)Mathf.Floor(Camera.main.orthographicSize * Camera.main.aspect * 2);
-		rowsTarget = (int)Mathf.Floor(Camera.main.orthographicSize * 2);
-        startPos = new Vector2(0,0);
+        rowsTarget = (int)Mathf.Floor(Camera.main.orthographicSize * 2);
+        startPos = new Vector2(0, 0);
         for (int x = 0; x < columnsTarget; x++)
         {
             for (int y = 0; y < rowsTarget; y++)
@@ -76,19 +76,19 @@ public class Life : MonoBehaviour
         columnsSpawned = columnsTarget;
         rowsSpawned = rowsTarget;
         UpdateLifeName();
-        cam.transform.position = new Vector3(((columnsSpawned-1)*0.5f)-startPos.x,((rowsSpawned-1)*0.5f)-startPos.y,cam.transform.position.z);
+        cam.transform.position = new Vector3(((columnsSpawned - 1) * 0.5f) - startPos.x, ((rowsSpawned - 1) * 0.5f) - startPos.y, cam.transform.position.z);
     }
 
     private void SpawnCell(int x, int y)
     {
-        if (xy[x,y] != null)
+        if (xy[x, y] != null)
         {
             Debug.Log("Exists already");
             return;
-        } 
+        }
         bool toLive = false;
-        Vector2 newPos = new Vector2(x-startPos.x, y-startPos.y);
-        var newO = Instantiate(cellPrefab, newPos, Quaternion.identity,transform);
+        Vector2 newPos = new Vector2(x - startPos.x, y - startPos.y);
+        var newO = Instantiate(cellPrefab, newPos, Quaternion.identity, transform);
         if (Random.Range(0, 100) < chanceOfLife) toLive = true;
         xy[x, y] = newO.GetComponent<Cell>();
         xy[x, y].SetStartInfo(toLive, this);
@@ -96,13 +96,13 @@ public class Life : MonoBehaviour
 
     private void DespawnCells(int x, int y)
     {
-        if (xy[x,y] == null)
+        if (xy[x, y] == null)
         {
             Debug.Log("Despawned already");
             return;
-        } 
+        }
         Destroy(xy[x, y].gameObject);
-        xy[x,y] = null;
+        xy[x, y] = null;
     }
 
     void Update()
@@ -131,19 +131,22 @@ public class Life : MonoBehaviour
             Zoom();
         }
 
-        if (Input.GetButton("Fire3") && !eventSystem.IsPointerOverGameObject())
+        if (Input.GetButton("Fire3"))
         {
-            Pan();
+            if (IsUIBlocking())
+                Pan();
         }
 
-        if (Input.GetButton("Fire1") && !eventSystem.IsPointerOverGameObject())
+        if (Input.GetButton("Fire1"))
         {
-            FireCell();
+            if (IsUIBlocking())
+                FireCell();
         }
 
-        if (Input.GetButtonDown("Fire2") && !eventSystem.IsPointerOverGameObject())
+        if (Input.GetButtonDown("Fire2"))
         {
-            SpawnSpecial();
+            if (IsUIBlocking())
+                SpawnSpecial();
         }
 
         if (Input.GetKeyDown("backspace"))
@@ -155,6 +158,22 @@ public class Life : MonoBehaviour
         {
             PlayPause();
         }
+    }
+
+    private bool IsUIBlocking() // Credit daveMennenoh Unity forums
+    {
+        PointerEventData eventData = new PointerEventData(EventSystem.current);
+        eventData.position = Input.mousePosition;
+        List<RaycastResult> raycastResults = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, raycastResults);
+       
+        for (int index = 0; index < raycastResults.Count; index++)
+        {
+            RaycastResult curRaysastResult = raycastResults[index];
+            if (curRaysastResult.gameObject.layer == LayerMask.NameToLayer("UI"))
+                return false;
+        }
+        return true;
     }
 
     private void Pan()
@@ -174,32 +193,7 @@ public class Life : MonoBehaviour
         cam.transform.position += Time.deltaTime * zoomAimMod * (Vector3)camToMouse;
     }
 
-    private void SpawnSpecial()
-    {
-        switch (spawnType)
-        {
-            case 0:
-                FireAcorn();
-                break;
-            case 1:
-                FirePulsar();
-                break;
-            case 2:
-                FirePenta();
-                break;
-            case 3:
-                FireLineX();
-                break;
-            case 4:
-                FireLineY();
-                break;
-            case 5:
-                FireBlock();
-                break;
-            default:
-                break;
-        }
-    }
+
 
     public void PlayPause()
     {
@@ -215,37 +209,24 @@ public class Life : MonoBehaviour
     {
         edgeType = edgeDropDown.value;
 
-        switch (edgeType)
-        {
-            case 0:
-                enableWrapping = false;
-                break;
-            case 1:
-                enableWrapping = true;
-                break;
-            case 2:
-                enableWrapping = true;
-                break;
-            default:
-                break;
-        }
+
     }
 
     private void CheckAndSetColumnsRows()
     {
         if (columnsTarget > columnsSpawned)
         {
-            if (columnsTarget > columnsMax) 
+            if (columnsTarget > columnsMax)
             {
                 columnsTarget = columnsMax;
                 return;
             }
-            
+
             for (int y = 0; y < rowsSpawned; y++)
             {
                 SpawnCell(columnsSpawned, y);
             }
-            columnsSpawned ++;
+            columnsSpawned++;
             UpdateLifeName();
         }
         else if (columnsTarget < columnsSpawned)
@@ -269,16 +250,16 @@ public class Life : MonoBehaviour
             {
                 SpawnCell(x, rowsSpawned);
             }
-            rowsSpawned ++;
+            rowsSpawned++;
             UpdateLifeName();
         }
         else if (rowsTarget < rowsSpawned)
         {
             for (int x = 0; x < columnsSpawned; x++)
             {
-                DespawnCells(x, rowsSpawned+1);
+                DespawnCells(x, rowsSpawned + 1);
             }
-            rowsSpawned --;
+            rowsSpawned--;
             UpdateLifeName();
         }
     }
@@ -297,7 +278,7 @@ public class Life : MonoBehaviour
             {
                 bool toLive = false;
                 if (Random.Range(0, 100) < chanceOfLife) toLive = true;
-                xy[x,y].SetLife(toLive);
+                xy[x, y].SetLife(toLive);
             }
         }
     }
@@ -308,11 +289,11 @@ public class Life : MonoBehaviour
         float xClick = Mathf.Clamp(mousePos.x + startPos.x, 0, columnsSpawned);
         float yClick = Mathf.Clamp(mousePos.y + startPos.y, 0, rowsSpawned);
 
-        xPos = Mathf.Clamp(Mathf.RoundToInt(xClick),0,columnsMax-1);
-        yPos = Mathf.Clamp(Mathf.RoundToInt(yClick),0,rowsMax-1);
+        xPos = Mathf.Clamp(Mathf.RoundToInt(xClick), 0, columnsMax - 1);
+        yPos = Mathf.Clamp(Mathf.RoundToInt(yClick), 0, rowsMax - 1);
 
-        if (Mathf.Clamp(xPos+1,0,columnsMax) > columnsSpawned) columnsTarget ++;
-        if (Mathf.Clamp(yPos+1,0,rowsMax) > rowsSpawned) rowsTarget ++;
+        if (Mathf.Clamp(xPos + 1, 0, columnsMax) > columnsSpawned) columnsTarget++;
+        if (Mathf.Clamp(yPos + 1, 0, rowsMax) > rowsSpawned) rowsTarget++;
 
         CheckAndSetColumnsRows();
     }
@@ -334,7 +315,7 @@ public class Life : MonoBehaviour
         {
             if (yIn >= 0 && yIn < rowsSpawned)
             {
-                xy[xIn,yIn].SetLife(true);
+                xy[xIn, yIn].SetLife(true);
             }
         }
     }
@@ -351,17 +332,23 @@ public class Life : MonoBehaviour
             {
                 // if (!xy[x,y].alive) continue;
                 int aliveNeighbours = 0;
-                if (enableWrapping)
+                switch (edgeType)
                 {
-                    aliveNeighbours = CheckNeighboursWrapping(x, y, aliveNeighbours);
-                }
-                else
-                {
-                    aliveNeighbours = CheckNeighbours(x, y, aliveNeighbours);
+                    case 0:
+                        aliveNeighbours = CheckNeighbours(x, y, aliveNeighbours);
+                        break;
+                    case 1:
+                        aliveNeighbours = CheckNeighboursWrapping(x, y, aliveNeighbours);
+                        break;
+                    case 2:
+                        aliveNeighbours = CheckNeighboursBounce(x, y, aliveNeighbours);
+                        break;
+                    default:
+                        break;
                 }
 
                 xy[x, y].aliveNeighbours = aliveNeighbours;
-                xy[x,y].check = false;
+                xy[x, y].check = false;
             }
         }
 
@@ -399,8 +386,8 @@ public class Life : MonoBehaviour
                 int nx = (x + i + columnsSpawned) % columnsSpawned;
                 int ny = (y + j + rowsSpawned) % rowsSpawned;
                 if (xy[nx, ny].alive) aliveNeighbours++;
-                    // else
-                    // xy[nx,ny].check = true;
+                // else
+                // xy[nx,ny].check = true;
             }
         }
 
@@ -424,9 +411,38 @@ public class Life : MonoBehaviour
                 {
                     // Count if the neighboring cell is alive
                     if (xy[nx, ny].alive) aliveNeighbours++;
-                        // else
-                        // xy[nx,ny].check = true;
+                    // else
+                    // xy[nx,ny].check = true;
                 }
+            }
+        }
+
+        return aliveNeighbours;
+    }
+
+    private int CheckNeighboursBounce(int x, int y, int aliveNeighbours)
+    {
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                // Skip the current cell
+                if (i == 0 && j == 0) continue;
+
+                // Check if the neighboring cell is within the grid bounds
+                int nx = x + i;
+                int ny = y + j;
+
+                if (nx < 0 && i == -1) nx = nx + 2;
+                else if (nx > columnsSpawned - 1 && i == 1) nx = nx - 2;
+
+                if (ny < 0 && j == -1) ny = ny + 2;
+                else if (ny > rowsSpawned - 1 && j == 1) ny = ny - 2;
+
+                // Count if the neighboring cell is alive
+                if (xy[nx, ny].alive) aliveNeighbours++;
+                // else
+                // xy[nx,ny].check = true;
             }
         }
 
@@ -457,29 +473,29 @@ public class Life : MonoBehaviour
                 {
                     setAlive = false;
                 }
-                
+
                 thisCell.SetLife(setAlive);
                 thisCell.aliveNeighbours = 0;
                 if (thisCell.stableGenerations > 1)
                 {
-                    stableCells ++;
+                    stableCells++;
                 }
             }
         }
-        
-        if (stableCells == columnsSpawned*rowsSpawned)
+
+        if (stableCells == columnsSpawned * rowsSpawned)
         {
             stable = true;
         }
         else
         {
             stable = false;
-            unstableGenerations ++;
+            unstableGenerations++;
             menu.SetGenerationText(unstableGenerations);
         }
-        float percentage = (float)(stableCells/((float)columnsSpawned*(float)rowsSpawned))*100.0f;
+        float percentage = (float)(stableCells / ((float)columnsSpawned * (float)rowsSpawned)) * 100.0f;
         menu.SetStableText(stable, (int)percentage);
-        
+
         refreshTimer = refreshRate;
         hasChecked = false;
         cam.backgroundColor = deadColor;
@@ -490,9 +506,42 @@ public class Life : MonoBehaviour
         xy[xPos, yPos].SetLife(true);
     }
 
-    private void FireAcorn()
+    private void SpawnSpecial()
     {
         GetClickPosToGrid(out int xPos, out int yPos);
+        switch (spawnType)
+        {
+            case 0:
+                FireAcorn(xPos, yPos);
+                break;
+            case 1:
+                FirePulsar(xPos, yPos);
+                break;
+            case 2:
+                FirePenta(xPos, yPos);
+                break;
+            case 3:
+                FireLineX(xPos, yPos);
+                break;
+            case 4:
+                FireLineY(xPos, yPos);
+                break;
+            case 5:
+                FireCross(xPos, yPos);
+                break;
+            case 6:
+                FireBlock(xPos, yPos);
+                break;
+            case 7:
+                FireChaos(xPos, yPos);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void FireAcorn(int xPos, int yPos)
+    {
         xy[xPos, yPos].SetLife(true);
         //Spawn acorn
         CheckAndSetLife(xPos - 2, yPos + 1);
@@ -503,9 +552,8 @@ public class Life : MonoBehaviour
         CheckAndSetLife(xPos + 3, yPos - 1);
     }
 
-    private void FirePulsar()
+    private void FirePulsar(int xPos, int yPos)
     {
-        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(false);
         //bottom left pulsar
         CheckAndSetLife(xPos - 1, yPos - 2);
@@ -542,74 +590,72 @@ public class Life : MonoBehaviour
         CheckAndSetLife(xPos - 4, yPos + 6);
 
         //bottom right pulsar
-        CheckAndSetLife(xPos +1, yPos - 2);
-        CheckAndSetLife(xPos +1, yPos - 3);
-        CheckAndSetLife(xPos +1, yPos - 4);
+        CheckAndSetLife(xPos + 1, yPos - 2);
+        CheckAndSetLife(xPos + 1, yPos - 3);
+        CheckAndSetLife(xPos + 1, yPos - 4);
 
-        CheckAndSetLife(xPos +6, yPos - 2);
-        CheckAndSetLife(xPos +6, yPos - 3);
-        CheckAndSetLife(xPos +6, yPos - 4);
+        CheckAndSetLife(xPos + 6, yPos - 2);
+        CheckAndSetLife(xPos + 6, yPos - 3);
+        CheckAndSetLife(xPos + 6, yPos - 4);
 
-        CheckAndSetLife(xPos +2, yPos - 1);
-        CheckAndSetLife(xPos +3, yPos - 1);
-        CheckAndSetLife(xPos +4, yPos - 1);
+        CheckAndSetLife(xPos + 2, yPos - 1);
+        CheckAndSetLife(xPos + 3, yPos - 1);
+        CheckAndSetLife(xPos + 4, yPos - 1);
 
-        CheckAndSetLife(xPos +2, yPos - 6);
-        CheckAndSetLife(xPos +3, yPos - 6);
-        CheckAndSetLife(xPos +4, yPos - 6);
+        CheckAndSetLife(xPos + 2, yPos - 6);
+        CheckAndSetLife(xPos + 3, yPos - 6);
+        CheckAndSetLife(xPos + 4, yPos - 6);
 
         //top right pulsar
-        CheckAndSetLife(xPos +1, yPos + 2);
-        CheckAndSetLife(xPos +1, yPos + 3);
-        CheckAndSetLife(xPos +1, yPos + 4);
+        CheckAndSetLife(xPos + 1, yPos + 2);
+        CheckAndSetLife(xPos + 1, yPos + 3);
+        CheckAndSetLife(xPos + 1, yPos + 4);
 
-        CheckAndSetLife(xPos +6, yPos + 2);
-        CheckAndSetLife(xPos +6, yPos + 3);
-        CheckAndSetLife(xPos +6, yPos + 4);
+        CheckAndSetLife(xPos + 6, yPos + 2);
+        CheckAndSetLife(xPos + 6, yPos + 3);
+        CheckAndSetLife(xPos + 6, yPos + 4);
 
-        CheckAndSetLife(xPos +2, yPos + 1);
-        CheckAndSetLife(xPos +3, yPos + 1);
-        CheckAndSetLife(xPos +4, yPos + 1);
+        CheckAndSetLife(xPos + 2, yPos + 1);
+        CheckAndSetLife(xPos + 3, yPos + 1);
+        CheckAndSetLife(xPos + 4, yPos + 1);
 
-        CheckAndSetLife(xPos +2, yPos + 6);
-        CheckAndSetLife(xPos +3, yPos + 6);
-        CheckAndSetLife(xPos +4, yPos + 6);
+        CheckAndSetLife(xPos + 2, yPos + 6);
+        CheckAndSetLife(xPos + 3, yPos + 6);
+        CheckAndSetLife(xPos + 4, yPos + 6);
     }
 
-    private void FirePenta()
+    private void FirePenta(int xPos, int yPos)
     {
-        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(false);
         //LeftWall
-        CheckAndSetLife(xPos - 2, yPos +2);
-        CheckAndSetLife(xPos - 2, yPos +1);
-        CheckAndSetLife(xPos - 2, yPos +0);
-        CheckAndSetLife(xPos - 2, yPos -1);
-        CheckAndSetLife(xPos - 2, yPos -2);
-        CheckAndSetLife(xPos - 2, yPos -3);
+        CheckAndSetLife(xPos - 2, yPos + 2);
+        CheckAndSetLife(xPos - 2, yPos + 1);
+        CheckAndSetLife(xPos - 2, yPos + 0);
+        CheckAndSetLife(xPos - 2, yPos - 1);
+        CheckAndSetLife(xPos - 2, yPos - 2);
+        CheckAndSetLife(xPos - 2, yPos - 3);
 
         //RightWall
-        CheckAndSetLife(xPos + 2, yPos +2);
-        CheckAndSetLife(xPos + 2, yPos +1);
-        CheckAndSetLife(xPos + 2, yPos +0);
-        CheckAndSetLife(xPos + 2, yPos -1);
-        CheckAndSetLife(xPos + 2, yPos -2);
-        CheckAndSetLife(xPos + 2, yPos -3);
+        CheckAndSetLife(xPos + 2, yPos + 2);
+        CheckAndSetLife(xPos + 2, yPos + 1);
+        CheckAndSetLife(xPos + 2, yPos + 0);
+        CheckAndSetLife(xPos + 2, yPos - 1);
+        CheckAndSetLife(xPos + 2, yPos - 2);
+        CheckAndSetLife(xPos + 2, yPos - 3);
 
         //Top
-        CheckAndSetLife(xPos -1, yPos +3);
-        CheckAndSetLife(xPos +0, yPos +4);
-        CheckAndSetLife(xPos +1, yPos +3);
+        CheckAndSetLife(xPos - 1, yPos + 3);
+        CheckAndSetLife(xPos + 0, yPos + 4);
+        CheckAndSetLife(xPos + 1, yPos + 3);
 
         //Bottom
-        CheckAndSetLife(xPos -1, yPos -4);
-        CheckAndSetLife(xPos +0, yPos -5);
-        CheckAndSetLife(xPos +1, yPos -4);
+        CheckAndSetLife(xPos - 1, yPos - 4);
+        CheckAndSetLife(xPos + 0, yPos - 5);
+        CheckAndSetLife(xPos + 1, yPos - 4);
     }
 
-    private void FireLineX()
+    private void FireLineX(int xPos, int yPos)
     {
-        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(true);
         //Fire Line X
         for (int x = 0; x < columnsSpawned; x++)
@@ -618,9 +664,8 @@ public class Life : MonoBehaviour
         }
     }
 
-    private void FireLineY()
+    private void FireLineY(int xPos, int yPos)
     {
-        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(true);
         //Fire Line Y
         for (int y = 0; y < rowsSpawned; y++)
@@ -629,9 +674,8 @@ public class Life : MonoBehaviour
         }
     }
 
-    private void FireBlock()
+    private void FireBlock(int xPos, int yPos)
     {
-        GetClickPosToGrid(out int xPos, out int yPos);
         xy[xPos, yPos].SetLife(true);
         //Fire block of 20
         for (int y = -10; y < 10; y++)
@@ -639,9 +683,41 @@ public class Life : MonoBehaviour
             for (int x = -10; x < 10; x++)
             {
                 if (y == 0 && x == 0) continue;
-                
-                CheckAndSetLife(x+xPos, y+yPos);
+
+                CheckAndSetLife(x + xPos, y + yPos);
             }
         }
+    }
+
+    private void FireCross(int xPos, int yPos)
+    {
+        FireLineY(xPos, yPos);
+        FireLineX(xPos, yPos);
+    }
+
+    private void FireChaos(int xPos, int yPos)
+    {
+        xPos = Random.Range(0, columnsSpawned);
+        yPos = Random.Range(0, rowsSpawned);
+        FireAcorn(xPos, yPos);
+        xPos = Random.Range(0, columnsSpawned);
+        yPos = Random.Range(0, rowsSpawned);
+        FireBlock(xPos, yPos);
+        // xPos = Random.Range(0, columnsSpawned);
+        // yPos = Random.Range(0, rowsSpawned);
+        // FireCross(xPos, yPos);
+        // xPos = Random.Range(0, columnsSpawned);
+        // yPos = Random.Range(0, rowsSpawned);
+        // FireLineX(xPos, yPos);
+        // xPos = Random.Range(0, columnsSpawned);
+        // yPos = Random.Range(0, rowsSpawned);
+        // FireLineY(xPos, yPos);
+        xPos = Random.Range(0, columnsSpawned);
+        yPos = Random.Range(0, rowsSpawned);
+        FirePulsar(xPos, yPos);
+        xPos = Random.Range(0, columnsSpawned);
+        yPos = Random.Range(0, rowsSpawned);
+        FirePenta(xPos, yPos);
+
     }
 }

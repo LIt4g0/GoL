@@ -282,7 +282,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 0}
   m_AnchoredPosition: {x: 0, y: 2}
-  m_SizeDelta: {x: 0, y: 150}
+  m_SizeDelta: {x: 0, y: 170}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &38350762
 MonoBehaviour:
@@ -1772,7 +1772,11 @@ MonoBehaviour:
       m_Image: {fileID: 0}
     - m_Text: Line Y
       m_Image: {fileID: 0}
+    - m_Text: Cross
+      m_Image: {fileID: 0}
     - m_Text: Box
+      m_Image: {fileID: 0}
+    - m_Text: Chaos
       m_Image: {fileID: 0}
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2116,7 +2120,7 @@ GameObject:
   - component: {fileID: 702027137}
   - component: {fileID: 702027139}
   - component: {fileID: 702027138}
-  m_Layer: 5
+  m_Layer: 2
   m_Name: Stable
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2140,7 +2144,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
   m_AnchoredPosition: {x: 0, y: 36.931732}
-  m_SizeDelta: {x: 599.1, y: 50.9779}
+  m_SizeDelta: {x: 465, y: 50.9779}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &702027138
 MonoBehaviour:
@@ -2369,11 +2373,11 @@ GameObject:
   - component: {fileID: 714764211}
   m_Layer: 5
   m_Name: Help
-  m_TagString: Untagged
+  m_TagString: ClickThrough
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &714764210
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2414,7 +2418,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Help:'
+  m_text: Help
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2786,7 +2790,7 @@ GameObject:
   - component: {fileID: 855825573}
   - component: {fileID: 855825575}
   - component: {fileID: 855825574}
-  m_Layer: 5
+  m_Layer: 2
   m_Name: Generations
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2809,8 +2813,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 317.8, y: 13.1}
-  m_SizeDelta: {x: 589.2, y: 50.977905}
+  m_AnchoredPosition: {x: 51.34082, y: 23.6138}
+  m_SizeDelta: {x: 75.9951, y: 29.9503}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &855825574
 MonoBehaviour:
@@ -2832,7 +2836,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 95812
+  m_text: 00000
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -4448,7 +4452,7 @@ GameObject:
   - component: {fileID: 1470763623}
   - component: {fileID: 1470763625}
   - component: {fileID: 1470763624}
-  m_Layer: 5
+  m_Layer: 2
   m_Name: Title
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5042,7 +5046,7 @@ GameObject:
   - component: {fileID: 1700704961}
   - component: {fileID: 1700704960}
   - component: {fileID: 1700704959}
-  m_Layer: 5
+  m_Layer: 2
   m_Name: Panel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5507,7 +5511,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8550237287676337523, guid: ea4c930bcdfb4ad4b9e0172ab1e5a933, type: 3}
       propertyPath: m_text
-      value: Show Help
+      value: Help
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5681,7 +5685,7 @@ MonoBehaviour:
   selectorDropDown: {fileID: 617517635}
   edgeDropDown: {fileID: 630502102}
   menu: {fileID: 1190408110}
-  refreshRate: 1
+  refreshRate: 0.1
   aliveColor: {r: 0.98823535, g: 0.68235296, b: 0.2901961, a: 1}
   dyingColor: {r: 0.7490196, g: 0.18823531, b: 0.20392159, a: 1}
   stableColor: {r: 0.92549026, g: 0.37647063, b: 0.20392159, a: 1}
