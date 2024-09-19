@@ -1,8 +1,4 @@
-//using System;
-//using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-//using System.Numerics;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -13,6 +9,10 @@ public class Life : MonoBehaviour
     [SerializeField] GameObject cellPrefab;
     [SerializeField] TMPro.TMP_Dropdown selectorDropDown;
     [SerializeField] TMPro.TMP_Dropdown edgeDropDown;
+    [SerializeField] TMPro.TMP_Dropdown colorSelectDropDown;
+    [SerializeField] Slider lifeChanceSlider;
+    [SerializeField] Slider lifeTimeSlider;
+    [SerializeField] Slider deadTimeSlider;
     [SerializeField] MenuControl menu;
 
     [Header("Cell Refresh")]
@@ -32,7 +32,6 @@ public class Life : MonoBehaviour
     [Range(5, 1000)] int rowsMax = 1000;
     [SerializeField][Range(5, 1000)] int columnsTarget = 1;
     [SerializeField][Range(5, 1000)] int rowsTarget = 1;
-    [SerializeField] bool enableWrapping;
     [SerializeField] int columnsSpawned;
     [SerializeField] int rowsSpawned;
     [SerializeField][Range(0, 100)] int chanceOfLife = 1;
@@ -49,15 +48,24 @@ public class Life : MonoBehaviour
 
     int spawnType = 0;
     int edgeType = 0;
+    int colorSet = 0;
     Camera cam;
     Cell[,] xy;
     bool playing = false;
     bool hasChecked = false;
     Vector2 startPos;
     EventSystem eventSystem;
+    ColorManager colorManager;
 
     void Start()
     {
+        colorManager = GetComponent<ColorManager>();
+        SetPercentageLife();
+        SetEdgeType();
+        SetSpawnType();
+        SetColors();
+        SetLifeTime();
+        SetDieTime();
         cam = Camera.main;
         Application.targetFrameRate = 60;
         unstableGenerations = 0;
@@ -79,75 +87,28 @@ public class Life : MonoBehaviour
         cam.transform.position = new Vector3(((columnsSpawned - 1) * 0.5f) - startPos.x, ((rowsSpawned - 1) * 0.5f) - startPos.y, cam.transform.position.z);
     }
 
-    private void SpawnCell(int x, int y)
-    {
-        if (xy[x, y] != null)
-        {
-            Debug.Log("Exists already");
-            return;
-        }
-        bool toLive = false;
-        Vector2 newPos = new Vector2(x - startPos.x, y - startPos.y);
-        var newO = Instantiate(cellPrefab, newPos, Quaternion.identity, transform);
-        if (Random.Range(0, 100) < chanceOfLife) toLive = true;
-        xy[x, y] = newO.GetComponent<Cell>();
-        xy[x, y].SetStartInfo(toLive, this);
-    }
 
-    private void DespawnCells(int x, int y)
-    {
-        if (xy[x, y] == null)
-        {
-            Debug.Log("Despawned already");
-            return;
-        }
-        Destroy(xy[x, y].gameObject);
-        xy[x, y] = null;
-    }
 
     void Update()
     {
+
+
         CheckAndSetColumnsRows();
 
         InputHandling();
 
-        if (playing) refreshTimer -= Time.deltaTime;
+        CheckCells();
 
-        if (!hasChecked && refreshTimer < 0)
-        {
-            CheckCells();
-        }
-
-        if (hasChecked)
-        {
-            UpdateCells();
-        }
+        UpdateCells();
     }
 
-    private void InputHandling()
+    void InputHandling()
     {
-        if (Input.GetAxis("Mouse ScrollWheel") != 0)
-        {
-            Zoom();
-        }
-
-        if (Input.GetButton("Fire3"))
-        {
-            if (IsUIBlocking())
-                Pan();
-        }
-
-        if (Input.GetButton("Fire1"))
-        {
-            if (IsUIBlocking())
-                FireCell();
-        }
-
-        if (Input.GetButtonDown("Fire2"))
-        {
-            if (IsUIBlocking())
-                SpawnSpecial();
-        }
+  
+        Zoom();
+        Pan();
+        FireCell();
+        SpawnSpecial();
 
         if (Input.GetKeyDown("backspace"))
         {
@@ -160,40 +121,27 @@ public class Life : MonoBehaviour
         }
     }
 
-    private bool IsUIBlocking() // Credit daveMennenoh Unity forums
+    void Pan()
     {
-        PointerEventData eventData = new PointerEventData(EventSystem.current);
-        eventData.position = Input.mousePosition;
-        List<RaycastResult> raycastResults = new List<RaycastResult>();
-        EventSystem.current.RaycastAll(eventData, raycastResults);
-       
-        for (int index = 0; index < raycastResults.Count; index++)
+        if (Input.GetButton("Fire3") && IsUIBlocking())
         {
-            RaycastResult curRaysastResult = raycastResults[index];
-            if (curRaysastResult.gameObject.layer == LayerMask.NameToLayer("UI"))
-                return false;
+            Vector3 pan = Vector3.zero;
+            pan.x = Mathf.Clamp(-Input.GetAxisRaw("Mouse X"), -1, 1);
+            pan.y = Mathf.Clamp(-Input.GetAxisRaw("Mouse Y"), -1, 1);
+            cam.transform.position += cam.orthographicSize * panSpeed * Time.deltaTime * pan;
         }
-        return true;
     }
 
-    private void Pan()
+    void Zoom()
     {
-        Vector3 pan = Vector3.zero;
-        pan.x = Mathf.Clamp(-Input.GetAxisRaw("Mouse X"), -1, 1);
-        pan.y = Mathf.Clamp(-Input.GetAxisRaw("Mouse Y"), -1, 1);
-        cam.transform.position += cam.orthographicSize * panSpeed * Time.deltaTime * pan;
-    }
+        if (Input.GetAxis("Mouse ScrollWheel") == 0) return;
 
-    private void Zoom()
-    {
         cam.orthographicSize = Mathf.Clamp(cam.orthographicSize - (Input.GetAxisRaw("Mouse ScrollWheel") * zoomSpeed * Time.deltaTime), 1, Mathf.Infinity);
         Vector2 camToMouse = cam.ScreenToWorldPoint(Input.mousePosition);
         camToMouse -= (Vector2)cam.transform.position;
         camToMouse *= Mathf.Clamp(Input.GetAxisRaw("Mouse ScrollWheel"), 0, 1f);
         cam.transform.position += Time.deltaTime * zoomAimMod * (Vector3)camToMouse;
     }
-
-
 
     public void PlayPause()
     {
@@ -208,11 +156,66 @@ public class Life : MonoBehaviour
     public void SetEdgeType()
     {
         edgeType = edgeDropDown.value;
-
-
     }
 
-    private void CheckAndSetColumnsRows()
+    public void SetColors()
+    {
+        colorSet = colorSelectDropDown.value;
+
+        aliveColor = colorManager.aliveColors[colorSet];
+        dyingColor = colorManager.dyingColors[colorSet];
+        stableColor = colorManager.stableColors[colorSet];
+        oscilatingColor = colorManager.oscilatingColors[colorSet];
+        deadColor = colorManager.deadColors[colorSet];
+    }
+
+
+    public void SetPercentageLife()
+    {
+        chanceOfLife = (int)lifeChanceSlider.value;
+    }
+
+    public void SetLifeTime()
+    {
+        refreshRate = lifeTimeSlider.value;
+    }
+
+    public void SetDieTime()
+    {
+        deadFadeTime = deadTimeSlider.value;
+    }
+
+    public void SpawnLife()
+    {
+        ClearLife();
+        for (int x = 0; x < columnsSpawned; x++)
+        {
+            for (int y = 0; y < rowsSpawned; y++)
+            {
+                bool toLive = false;
+                if (Random.Range(0, 100) < chanceOfLife) toLive = true;
+                xy[x, y].SetLife(toLive);
+            }
+        }
+    }
+
+    void GetClickPosToGrid(out int xPos, out int yPos)
+    {
+        Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
+
+        float xClick = Mathf.Clamp(mousePos.x + startPos.x, 0, columnsSpawned);
+        float yClick = Mathf.Clamp(mousePos.y + startPos.y, 0, rowsSpawned);
+
+        xPos = Mathf.Clamp(Mathf.RoundToInt(xClick), 0, columnsMax - 1);
+        yPos = Mathf.Clamp(Mathf.RoundToInt(yClick), 0, rowsMax - 1);
+
+        if (Mathf.Clamp(xPos + 1, 0, columnsMax) > columnsSpawned) columnsTarget++;
+        if (Mathf.Clamp(yPos + 1, 0, rowsMax) > rowsSpawned) rowsTarget++;
+
+        CheckAndSetColumnsRows();
+    }
+
+    void CheckAndSetColumnsRows()
     {
         if (columnsTarget > columnsSpawned)
         {
@@ -264,39 +267,11 @@ public class Life : MonoBehaviour
         }
     }
 
-    private void UpdateLifeName()
+    void UpdateLifeName()
     {
         this.name = "Life has " + rowsSpawned * columnsSpawned + " cells.";
     }
 
-    public void SpawnLife()
-    {
-        ClearLife();
-        for (int x = 0; x < columnsTarget; x++)
-        {
-            for (int y = 0; y < rowsTarget; y++)
-            {
-                bool toLive = false;
-                if (Random.Range(0, 100) < chanceOfLife) toLive = true;
-                xy[x, y].SetLife(toLive);
-            }
-        }
-    }
-    private void GetClickPosToGrid(out int xPos, out int yPos)
-    {
-        Vector3 mousePos = cam.ScreenToWorldPoint(Input.mousePosition);
-
-        float xClick = Mathf.Clamp(mousePos.x + startPos.x, 0, columnsSpawned);
-        float yClick = Mathf.Clamp(mousePos.y + startPos.y, 0, rowsSpawned);
-
-        xPos = Mathf.Clamp(Mathf.RoundToInt(xClick), 0, columnsMax - 1);
-        yPos = Mathf.Clamp(Mathf.RoundToInt(yClick), 0, rowsMax - 1);
-
-        if (Mathf.Clamp(xPos + 1, 0, columnsMax) > columnsSpawned) columnsTarget++;
-        if (Mathf.Clamp(yPos + 1, 0, rowsMax) > rowsSpawned) rowsTarget++;
-
-        CheckAndSetColumnsRows();
-    }
 
     public void ClearLife()
     {
@@ -320,63 +295,64 @@ public class Life : MonoBehaviour
         }
     }
 
-
-
-    private void CheckCells()
+    void CheckCells()
     {
-        float checktime = Time.realtimeSinceStartup;
+        if (playing) refreshTimer -= Time.deltaTime;
+
+        if (hasChecked || refreshTimer > 0) return;
+        
+        //float checktime = Time.realtimeSinceStartup;
         hasChecked = true;
         for (int x = 0; x < columnsSpawned; x++)
         {
             for (int y = 0; y < rowsSpawned; y++)
             {
-                // if (!xy[x,y].alive) continue;
-                int aliveNeighbours = 0;
+                if (!xy[x,y].alive) continue;
                 switch (edgeType)
                 {
                     case 0:
-                        aliveNeighbours = CheckNeighbours(x, y, aliveNeighbours);
+                        xy[x, y].aliveNeighbours = CheckNeighbours(x, y);
                         break;
                     case 1:
-                        aliveNeighbours = CheckNeighboursWrapping(x, y, aliveNeighbours);
+                        xy[x, y].aliveNeighbours = CheckNeighboursWrapping(x, y);
                         break;
                     case 2:
-                        aliveNeighbours = CheckNeighboursBounce(x, y, aliveNeighbours);
+                        xy[x, y].aliveNeighbours = CheckNeighboursBounce(x, y);
                         break;
                     default:
                         break;
                 }
-
-                xy[x, y].aliveNeighbours = aliveNeighbours;
-                xy[x, y].check = false;
             }
         }
 
-        // for (int x = 0; x < columnsSpawned; x++)
-        // {
-        //     for (int y = 0; y < rowsSpawned; y++)
-        //     {
-        //         if (!xy[x,y].check) continue;
-        //         int aliveNeighbours = 0;
-        //         if (enableWrapping)
-        //         {
-        //             aliveNeighbours = CheckNeighboursWrapping(x, y, aliveNeighbours);
-        //         }
-        //         else
-        //         {
-        //             aliveNeighbours = CheckNeighbours(x, y, aliveNeighbours);
-        //         }
-
-        //         xy[x, y].aliveNeighbours = aliveNeighbours;
-        //         xy[x,y].check = false;
-        //     }
-        // }
-
-        // Debug.Log(Time.realtimeSinceStartup - checktime);
+        //Debug.Log(Time.realtimeSinceStartup - checktime);
     }
 
-    private int CheckNeighboursWrapping(int x, int y, int aliveNeighbours)
+    int CheckNeighbours(int x, int y)
     {
+        int foundNeighbours = 0;
+        for (int i = -1; i <= 1; i++)
+        {
+            for (int j = -1; j <= 1; j++)
+            {
+                if (i == 0 && j == 0) continue;
+
+                int nx = x + i;
+                int ny = y + j;
+                if (nx >= 0 && nx < columnsSpawned && ny >= 0 && ny < rowsSpawned)
+                {
+                    if (xy[nx, ny].alive) foundNeighbours++;// Count if the neighboring cell is alive
+                        else xy[nx,ny].aliveNeighbours++;// Add neighbour to neighbour cell if its dead to attempt ressurection
+                }
+            }
+        }
+
+        return foundNeighbours;
+    }
+
+    int CheckNeighboursWrapping(int x, int y)
+    {
+        int foundNeighbours = 0;
         for (int i = -1; i <= 1; i++)
         {
             for (int j = -1; j <= 1; j++)
@@ -385,72 +361,45 @@ public class Life : MonoBehaviour
 
                 int nx = (x + i + columnsSpawned) % columnsSpawned;
                 int ny = (y + j + rowsSpawned) % rowsSpawned;
-                if (xy[nx, ny].alive) aliveNeighbours++;
-                // else
-                // xy[nx,ny].check = true;
+                if (xy[nx, ny].alive) foundNeighbours++;
+                    else xy[nx,ny].aliveNeighbours++;// Add neighbour to neighbour cell if its dead to attempt ressurection
             }
         }
 
-        return aliveNeighbours;
+        return foundNeighbours;
     }
 
-    private int CheckNeighbours(int x, int y, int aliveNeighbours)
+    int CheckNeighboursBounce(int x, int y)
     {
+        int foundNeighbours = 0;
         for (int i = -1; i <= 1; i++)
         {
             for (int j = -1; j <= 1; j++)
             {
-                // Skip the current cell
                 if (i == 0 && j == 0) continue;
 
-                // Check if the neighboring cell is within the grid bounds
                 int nx = x + i;
                 int ny = y + j;
 
-                if (nx >= 0 && nx < columnsSpawned && ny >= 0 && ny < rowsSpawned)
-                {
-                    // Count if the neighboring cell is alive
-                    if (xy[nx, ny].alive) aliveNeighbours++;
-                    // else
-                    // xy[nx,ny].check = true;
-                }
-            }
-        }
-
-        return aliveNeighbours;
-    }
-
-    private int CheckNeighboursBounce(int x, int y, int aliveNeighbours)
-    {
-        for (int i = -1; i <= 1; i++)
-        {
-            for (int j = -1; j <= 1; j++)
-            {
-                // Skip the current cell
-                if (i == 0 && j == 0) continue;
-
-                // Check if the neighboring cell is within the grid bounds
-                int nx = x + i;
-                int ny = y + j;
-
+                // If cell to check is out of bounds, check other side in attempt to create a bounce effect
                 if (nx < 0 && i == -1) nx = nx + 2;
                 else if (nx > columnsSpawned - 1 && i == 1) nx = nx - 2;
 
                 if (ny < 0 && j == -1) ny = ny + 2;
                 else if (ny > rowsSpawned - 1 && j == 1) ny = ny - 2;
-
-                // Count if the neighboring cell is alive
-                if (xy[nx, ny].alive) aliveNeighbours++;
-                // else
-                // xy[nx,ny].check = true;
+                
+                if (xy[nx, ny].alive) foundNeighbours++;// Count if the neighboring cell is alive
+                    else xy[nx,ny].aliveNeighbours++;// Add neighbour to neighbour cell if its dead to attempt ressurection
             }
         }
 
-        return aliveNeighbours;
+        return foundNeighbours;
     }
 
-    private void UpdateCells()
+    void UpdateCells()
     {
+        if (!hasChecked) return;
+        //float timer = Time.realtimeSinceStartup;
         stableCells = 0;
         for (int x = 0; x < columnsSpawned; x++)
         {
@@ -460,19 +409,12 @@ public class Life : MonoBehaviour
                 bool alive = thisCell.alive;
                 bool setAlive = alive;
                 int neighbours = thisCell.aliveNeighbours;
-                if (alive && neighbours < 2) //Debug.Log("Die due to loneliness");
-                {
-                    setAlive = false;
-                }
-                //if neighbours == 2 //Debug.Log("Live on");
-                if (!alive && neighbours == 3)//Debug.Log("Come to life");
-                {
-                    setAlive = true;
-                }
-                if (alive && neighbours > 3)//Debug.Log("Die due to overpopulation on");
-                {
-                    setAlive = false;
-                }
+                
+                if (neighbours < 2) setAlive = false;//Debug.Log("Die due to loneliness");
+                else if (neighbours == 3) setAlive = true;//Debug.Log("Come to life");
+                else if (neighbours > 3) setAlive = false;//Debug.Log("Die due to overpopulation on");
+                
+                //if neighbours == 2 //Debug.Log("No change");    
 
                 thisCell.SetLife(setAlive);
                 thisCell.aliveNeighbours = 0;
@@ -499,48 +441,99 @@ public class Life : MonoBehaviour
         refreshTimer = refreshRate;
         hasChecked = false;
         cam.backgroundColor = deadColor;
+
+        //Debug.Log(Time.realtimeSinceStartup - timer);
     }
-    private void FireCell()
+    
+    void SpawnCell(int x, int y)
     {
-        GetClickPosToGrid(out int xPos, out int yPos);
-        xy[xPos, yPos].SetLife(true);
+        if (xy[x, y] != null)
+        {
+            //Debug.Log("Exists already");
+            return;
+        }
+        bool toLive = false;
+        Vector2 newPos = new Vector2(x - startPos.x, y - startPos.y);
+        var newO = Instantiate(cellPrefab, newPos, Quaternion.identity, transform);
+        if (Random.Range(0, 100) < chanceOfLife) toLive = true;
+        xy[x, y] = newO.GetComponent<Cell>();
+        xy[x, y].SetStartInfo(toLive, this);
     }
 
-    private void SpawnSpecial()
+    void DespawnCells(int x, int y)
     {
-        GetClickPosToGrid(out int xPos, out int yPos);
-        switch (spawnType)
+        if (xy[x, y] == null)
         {
-            case 0:
-                FireAcorn(xPos, yPos);
-                break;
-            case 1:
-                FirePulsar(xPos, yPos);
-                break;
-            case 2:
-                FirePenta(xPos, yPos);
-                break;
-            case 3:
-                FireLineX(xPos, yPos);
-                break;
-            case 4:
-                FireLineY(xPos, yPos);
-                break;
-            case 5:
-                FireCross(xPos, yPos);
-                break;
-            case 6:
-                FireBlock(xPos, yPos);
-                break;
-            case 7:
-                FireChaos(xPos, yPos);
-                break;
-            default:
-                break;
+            //Debug.Log("Despawned already");
+            return;
+        }
+        Destroy(xy[x, y].gameObject);
+        xy[x, y] = null;
+    }
+
+    void FireCell()
+    {
+        if (Input.GetButton("Fire1") && IsUIBlocking())
+        {
+            GetClickPosToGrid(out int xPos, out int yPos);
+            xy[xPos, yPos].SetLife(true);
         }
     }
 
-    private void FireAcorn(int xPos, int yPos)
+    void SpawnSpecial()
+    {
+        if (Input.GetButtonDown("Fire2") && IsUIBlocking())
+        {
+            GetClickPosToGrid(out int xPos, out int yPos);
+            switch (spawnType)
+            {
+                case 0:
+                    FireAcorn(xPos, yPos);
+                    break;
+                case 1:
+                    FirePulsar(xPos, yPos);
+                    break;
+                case 2:
+                    FirePenta(xPos, yPos);
+                    break;
+                case 3:
+                    FireLineX(xPos, yPos);
+                    break;
+                case 4:
+                    FireLineY(xPos, yPos);
+                    break;
+                case 5:
+                    FireCross(xPos, yPos);
+                    break;
+                case 6:
+                    FireBlock(xPos, yPos);
+                    break;
+                case 7:
+                    FireChaos(xPos, yPos);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    bool IsUIBlocking() // Credit daveMennenoh Unity forums
+    {
+        PointerEventData eventData = new PointerEventData(eventSystem);
+        eventData.position = Input.mousePosition;
+        List<RaycastResult> raycastResults = new List<RaycastResult>();
+        eventSystem.RaycastAll(eventData, raycastResults);
+       
+        for (int index = 0; index < raycastResults.Count; index++)
+        {
+            RaycastResult curRaysastResult = raycastResults[index];
+            if (curRaysastResult.gameObject.layer == LayerMask.NameToLayer("UI"))
+                return false;
+        }
+        return true;
+    }
+
+    void FireAcorn(int xPos, int yPos)
     {
         xy[xPos, yPos].SetLife(true);
         //Spawn acorn
@@ -552,7 +545,7 @@ public class Life : MonoBehaviour
         CheckAndSetLife(xPos + 3, yPos - 1);
     }
 
-    private void FirePulsar(int xPos, int yPos)
+    void FirePulsar(int xPos, int yPos)
     {
         xy[xPos, yPos].SetLife(false);
         //bottom left pulsar
@@ -624,7 +617,7 @@ public class Life : MonoBehaviour
         CheckAndSetLife(xPos + 4, yPos + 6);
     }
 
-    private void FirePenta(int xPos, int yPos)
+    void FirePenta(int xPos, int yPos)
     {
         xy[xPos, yPos].SetLife(false);
         //LeftWall
@@ -654,7 +647,7 @@ public class Life : MonoBehaviour
         CheckAndSetLife(xPos + 1, yPos - 4);
     }
 
-    private void FireLineX(int xPos, int yPos)
+    void FireLineX(int xPos, int yPos)
     {
         xy[xPos, yPos].SetLife(true);
         //Fire Line X
@@ -664,7 +657,7 @@ public class Life : MonoBehaviour
         }
     }
 
-    private void FireLineY(int xPos, int yPos)
+    void FireLineY(int xPos, int yPos)
     {
         xy[xPos, yPos].SetLife(true);
         //Fire Line Y
@@ -674,7 +667,7 @@ public class Life : MonoBehaviour
         }
     }
 
-    private void FireBlock(int xPos, int yPos)
+    void FireBlock(int xPos, int yPos)
     {
         xy[xPos, yPos].SetLife(true);
         //Fire block of 20
@@ -689,13 +682,13 @@ public class Life : MonoBehaviour
         }
     }
 
-    private void FireCross(int xPos, int yPos)
+    void FireCross(int xPos, int yPos)
     {
         FireLineY(xPos, yPos);
         FireLineX(xPos, yPos);
     }
 
-    private void FireChaos(int xPos, int yPos)
+    void FireChaos(int xPos, int yPos)
     {
         xPos = Random.Range(0, columnsSpawned);
         yPos = Random.Range(0, rowsSpawned);
@@ -718,6 +711,5 @@ public class Life : MonoBehaviour
         xPos = Random.Range(0, columnsSpawned);
         yPos = Random.Range(0, rowsSpawned);
         FirePenta(xPos, yPos);
-
     }
 }

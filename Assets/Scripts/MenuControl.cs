@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class MenuControl : MonoBehaviour
 {
@@ -9,9 +10,10 @@ public class MenuControl : MonoBehaviour
     [SerializeField] RectTransform helpMenu;
     [SerializeField] TMPro.TMP_Text stable;
     [SerializeField] TMPro.TMP_Text generations;
-    //Life life;
     bool showMenu = true;
-    bool showHelp = true;
+    bool showHelp = false;
+    int prevPercent = 0;
+
     void Start()
     {
         //life = FindObjectOfType<Life>();
@@ -32,15 +34,27 @@ public class MenuControl : MonoBehaviour
     }
     public void SetStableText(bool inStable, int percentage)
     {
+        if (percentage == prevPercent) return;
         string newString = " ";
         newString = percentage + "% of cells have stabilized";
         if (inStable) newString = "Simulation has stabilized!";
 
         stable.text = newString;
+        prevPercent = percentage;
     }
 
     public void SetGenerationText(int generationIn)
     {
         generations.text = ""+generationIn;
+    }
+
+    public void ReloadScene()
+    {
+        SceneManager.LoadScene(0);
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
     }
 }
