@@ -13,11 +13,11 @@ Middle mouse scroll to zoom, middle mouse to pan.
 Space to pause/play.
 
 Gifs of game 1:
-https://github.com/LIt4g0/GoL/blob/main/Gif1.gif
+![me](https://github.com/LIt4g0/GoL/blob/main/Gif1.gif)
 
 Gifs of game 2:
-https://github.com/LIt4g0/GoL/blob/main/Gif2.gif
+![me](https://github.com/LIt4g0/GoL/blob/main/Gif2.gif)
 
 Gifs of game 1:
-https://github.com/LIt4g0/GoL/blob/main/Gif3.gif
+![me](https://github.com/LIt4g0/GoL/blob/main/Gif3.gif)
 
