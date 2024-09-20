@@ -13,12 +13,11 @@ Middle mouse scroll to zoom, middle mouse to pan.
 Space to pause/play.
 
 Gifs of game 1:
-![Unity_sOSmESSizZ](https://github.com/user-attachments/assets/252362cd-2634-41e2-bf33-08fac19e8917)
+https://github.com/LIt4g0/GoL/blob/main/Gif1.gif
 
+Gifs of game 2:
+https://github.com/LIt4g0/GoL/blob/main/Gif2.gif
 
 Gifs of game 1:
-
-
-Gifs of game 1:
-
+https://github.com/LIt4g0/GoL/blob/main/Gif3.gif
 
