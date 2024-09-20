@@ -5,12 +5,12 @@ This project was part of the Yrgo Game Programmer(24) education. The challenge w
 
 To play you can either download the entire unity solution and open it in the Unity 2022.3.xx or you can download the .7z file which can be found in the inconspicuously named folder "Zipped windows build here!".
 
-Controls:
-Mouse to navigate menu.
-Left mouse ressurect dead cells, right click to spawn patterns of cells.
-You can click outside of the border, to the right or above the grid to increase the size up to 1000x1000. Performance tanks at around 350*350 though.
-Middle mouse scroll to zoom, middle mouse to pan.
-Space to pause/play.
+Controls:\
+Mouse to navigate menu.\
+Left mouse ressurect dead cells, right click to spawn patterns of cells.\
+You can click outside of the border, to the right or above the grid to increase the size up to 1000x1000. Performance tanks at around 350*350 though.\
+Middle mouse scroll to zoom, middle mouse to pan.\
+Space to pause/play.\
 
 Gif of Life 1:
 ![me](https://github.com/LIt4g0/GoL/blob/main/Gif1.gif)
