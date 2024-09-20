@@ -12,13 +12,13 @@ You can click outside of the border, to the right or above the grid to increase 
 Middle mouse scroll to zoom, middle mouse to pan.
 Space to pause/play.
 
-Gifs of game 1:
-![Unity_sOSmESSizZ](https://github.com/user-attachments/assets/252362cd-2634-41e2-bf33-08fac19e8917)
+Gif of Life 1:
+![me](https://github.com/LIt4g0/GoL/blob/main/Gif1.gif)
 
+Gif of Life 2:
+![me](https://github.com/LIt4g0/GoL/blob/main/Gif2.gif)
 
-Gifs of game 1:
+Gif of Life 3:
+![me](https://github.com/LIt4g0/GoL/blob/main/Gif3.gif)
 
-
-Gifs of game 1:
-
-
+//LIt4g0|Jørgen Tandberg
