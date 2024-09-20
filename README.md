@@ -10,7 +10,7 @@ Mouse to navigate menu.\
 Left mouse ressurect dead cells, right click to spawn patterns of cells.\
 You can click outside of the border, to the right or above the grid to increase the size up to 1000x1000. Performance tanks at around 350*350 though.\
 Middle mouse scroll to zoom, middle mouse to pan.\
-Space to pause/play.\
+Space to pause/play.
 
 Gif of Life 1:
 ![me](https://github.com/LIt4g0/GoL/blob/main/Gif1.gif)
