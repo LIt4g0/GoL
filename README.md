@@ -12,12 +12,13 @@ You can click outside of the border, to the right or above the grid to increase 
 Middle mouse scroll to zoom, middle mouse to pan.
 Space to pause/play.
 
-Gifs of game 1:
+Gif of Life 1:
 ![me](https://github.com/LIt4g0/GoL/blob/main/Gif1.gif)
 
-Gifs of game 2:
+Gif of Life 2:
 ![me](https://github.com/LIt4g0/GoL/blob/main/Gif2.gif)
 
-Gifs of game 1:
+Gif of Life 3:
 ![me](https://github.com/LIt4g0/GoL/blob/main/Gif3.gif)
 
+//LIt4g0|Jørgen Tandberg
